@@ -1,0 +1,241 @@
+/* --- Biến-chung (General variables) (từ (from) các-file-khác (other files)) --- */
+:root {
+  --main-bg: #170f23;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --card-bg: #1a1025;
+  --section-border: #2f2739;
+  --player-primary-color: #9b4de0;
+}
+
+/* --- Container Chính (Main Container) --- */
+.main-content {
+  padding: 24px 30px;
+  color: var(--text-primary);
+  /* Đảm-bảo (Ensure) nền-giống (background matches) header/sidebar nếu- (if) App.css không- (doesn't)
+     background-color: var(--main-bg); 
+  */
+}
+
+/* --- Cấu-trúc-Phần (Section Structure) Chung (Chung) --- */
+.content-section {
+  margin-bottom: 40px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.see-all {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.see-all:hover {
+  color: var(--player-primary-color);
+}
+
+/* --- Lưới-Carousel (Carousel Grid) (cho (for) Gợi-ý (Suggestions) & Đối-tác (Partners)) --- */
+.carousel-grid {
+  display: grid;
+  gap: 20px;
+}
+.carousel-grid.three-columns {
+  grid-template-columns: repeat(3, 1fr);
+}
+.carousel-grid.five-columns {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+/* --- Thẻ-Bài-hát (Song Card) (Gợi-ý (Suggestions)) --- */
+.song-card {
+  background-color: transparent; /* Hoặc (Or) var(--card-bg) nếu-bạn-muốn (if you want) */
+}
+
+.card-image {
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%; /* Tạo-ra (Creates) tỷ-lệ-khung-hình (aspect ratio) 1:1 (1:1) */
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.card-image img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+.song-card:hover .card-image img {
+  transform: scale(1.1); /* Hiệu-ứng-phóng-to (Zoom effect) */
+}
+
+/* Lớp-phủ-Hành-động (Actions Overlay) */
+.overlay-actions {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.song-card:hover .overlay-actions {
+  opacity: 1;
+}
+
+/* Nút-Play (Play Button) (sử-dụng-lại (re-using) từ (from) PlayerControls) */
+.overlay-actions .play-pause-btn {
+  width: 45px;
+  height: 45px;
+  background-color: rgba(255, 255, 255, 0.8);
+  color: #000;
+  border-radius: 50%; /* Thêm-để-nó-tròn (Add to make it round) */
+  display: flex; /* Đảm-bảo-căn-giữa (Ensure centering) */
+  align-items: center;
+  justify-content: center;
+}
+.overlay-actions .play-pause-btn:hover {
+  background-color: #fff;
+}
+.overlay-actions .play-pause-btn svg {
+  font-size: 28px;
+  transform: translateX(1px); /* Căn-chỉnh (Adjust) icon play */
+}
+
+
+.card-info h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-info p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- Bảng-xếp-hạng (Chart) (#zingchart) --- */
+.chart-container {
+  display: grid;
+  grid-template-columns: 1fr; /* 1-cột (1 column) */
+  gap: 10px;
+}
+
+.chart-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+.chart-item:hover {
+  background-color: var(--section-border);
+}
+
+.chart-item-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 0; /* Cho-phép-co-giãn (Allow shrinking) */
+}
+
+.chart-rank {
+  font-size: 32px;
+  font-weight: 800;
+  width: 40px;
+  text-align: center;
+  -webkit-text-stroke: 1px var(--text-secondary);
+  color: transparent;
+  flex-shrink: 0;
+}
+.chart-rank.rank-1 { -webkit-text-stroke-color: #4a90e2; }
+.chart-rank.rank-2 { -webkit-text-stroke-color: #50e3c2; }
+.chart-rank.rank-3 { -webkit-text-stroke-color: #e35050; }
+
+.chart-cover {
+  width: 60px;
+  height: 60px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.chart-song-info {
+  min-width: 0; /* Cho-phép (Allow) text-overflow */
+}
+
+.chart-song-info h4 {
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chart-song-info p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chart-time {
+  font-size: 14px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  padding-left: 15px; /* Thêm-khoảng-cách (Add spacing) */
+}
+
+/* --- Đối-tác (Partners) --- */
+.partners-section {
+  border-top: 1px solid var(--section-border);
+  padding-top: 20px;
+}
+
+.partner-logo {
+  background-color: var(--section-border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+.partner-logo:hover {
+  opacity: 1;
+}
+.partner-logo img {
+  width: 100%;
+  max-width: 120px;
+  height: auto;
+  object-fit: contain;
+}

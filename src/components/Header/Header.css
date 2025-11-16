@@ -1,0 +1,167 @@
+/* Biến màu chính (lấy từ ảnh) */
+:root {
+    --header-bg: #170f23;
+    --search-bg: #2f2739;
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0a0; /* Dùng cho placeholder, icon mờ */
+    --vip-button-bg: #9b4de0;
+    --vip-button-hover: #aa63e8;
+    --header-height: 70px;
+}
+
+/* --- 1. Thiết lập Header tổng thể --- */
+.zm-header {
+  background-color: var(--header-bg);
+  color: var(--text-primary);
+  height: var(--header-height, 70px); /* Dùng biến hoặc 70px */
+  padding: 0 30px;
+
+  /* --- Đây là phần SỬA --- */
+  position: fixed;
+  top: 0;
+  
+  /* KHÔNG bắt-đầu (DON'T start) ở-bên-trái 0.
+     Bắt-đầu (Start) ở 240px (sau Sidebar).
+  */
+  left: 240px; 
+  right: 0; /* Kéo-dài (Stretch) đến-cạnh-phải (to the right edge) */
+  
+  z-index: 99; /* Nằm-dưới (Below) Sidebar (100) */
+  /* --- Kết-thúc-phần-SỬA (End of FIX) --- */
+
+  display: flex;
+  align-items: center;
+  box-sizing: border-box; 
+}
+
+/* Class 'level' từ code gốc, dùng làm container chính */
+.level {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Đẩy 3 khối ra 3 góc */
+    width: 100%;
+}
+
+.level-left,
+.level-right {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Khoảng cách giữa các item trong mỗi khối */
+}
+
+/* --- 2. Nút chung & Nút điều hướng --- */
+.zm-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Style cho react-icons (hoặc icon font) */
+.zm-btn svg {
+    font-size: 24px;
+}
+
+/* Nút Back/Forward bị vô hiệu hóa */
+.zm-btn.disabled {
+    color: rgba(255, 255, 255, 0.3); /* Mờ đi */
+    cursor: not-allowed;
+}
+
+.level-left .zm-btn.disabled svg {
+    font-size: 28px; /* Icon back/forward to hơn một chút */
+}
+
+/* --- 3. Ô tìm kiếm --- */
+.search {
+    margin-left: 10px; /* Tách khỏi nút forward */
+}
+
+.search__container {
+    display: flex;
+    align-items: center;
+    background-color: var(--search-bg);
+    border-radius: 999px; /* Bo tròn (pill shape) */
+    padding: 8px 12px;
+    width: 440px; /* Độ rộng cố định như trong ảnh */
+}
+
+.search__container .zm-btn {
+    padding: 0 8px 0 0; /* Tách icon ra khỏi input */
+}
+
+.search__container .zm-btn svg {
+    font-size: 20px;
+    color: var(--text-secondary); /* Icon tìm kiếm mờ hơn */
+}
+
+.input-wrapper {
+    flex-grow: 1; /* Cho input lấp đầy phần còn lại */
+}
+
+/* CSS cho <input> */
+.form-control {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 14px;
+    width: 100%;
+}
+
+.form-control::placeholder {
+    color: var(--text-secondary);
+    opacity: 1; /* Đảm bảo placeholder không bị mờ quá */
+}
+
+/* --- 4. Khối bên phải --- */
+.header-upgrade-vip-button {
+    background-color: var(--vip-button-bg);
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 20px;
+    border-radius: 999px;
+    white-space: nowrap; /* Chống xuống dòng */
+    transition: background-color 0.2s ease;
+}
+
+.header-upgrade-vip-button:hover {
+    background-color: var(--vip-button-hover); /* Màu sáng hơn khi hover */
+}
+
+/* Nút Cài đặt (hình tròn) */
+.setting-item .zm-btn {
+    background-color: var(--search-bg); /* Nền tròn mờ */
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+}
+
+.setting-item .zm-btn svg {
+    font-size: 20px;
+}
+
+/* Avatar Người dùng */
+.user-setting .zm-btn {
+    padding: 0;
+    border-radius: 50%;
+}
+
+.image.is-38x38 {
+    width: 38px;
+    height: 38px;
+    display: block;
+}
+
+.image.is-38x38 img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover; /* Đảm bảo ảnh vừa vặn */
+}

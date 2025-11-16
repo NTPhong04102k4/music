@@ -1,0 +1,266 @@
+/* --- Biến (Variables) --- */
+:root {
+  --player-height: 90px;
+  --player-bg: #130c1c;
+  --player-text-primary: #ffffff;
+  --player-text-secondary: #a0a0a0;
+  --player-border: #2f2739;
+  --player-primary-color: #9b4de0; /* Màu-tím (Purple color) từ (from) header */
+}
+
+/* --- 1. Container Chính (Main Container) --- */
+.player-controls {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: var(--player-height);
+  background-color: var(--player-bg);
+  border-top: 1px solid var(--player-border);
+  z-index: 101; /* Nổi-trên (On top of) tất-cả-mọi-thứ (everything) */
+  color: var(--player-text-primary);
+  
+  /* Layout 3-cột (3-column layout) */
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr; /* Trái (Left) 25%, Giữa (Center) 50%, Phải (Right) 25% */
+  align-items: center;
+  padding: 0 20px;
+  box-sizing: border-box; /* Thêm để padding không ảnh hưởng width */
+}
+
+/* --- 2. Khối Bên Trái (Left Block) (Thông-tin-bài-hát (Song Info)) --- */
+.player-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0; /* Giúp text-overflow: ellipsis hoạt động */
+}
+
+.song-cover {
+  width: 60px;
+  height: 60px;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0; /* Không cho co lại */
+}
+
+.song-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.song-cover .cover-icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.song-cover:hover .cover-icon {
+  opacity: 1;
+}
+
+.song-info {
+  flex-grow: 1;
+  min-width: 0; /* Giúp text-overflow: ellipsis hoạt động */
+}
+.song-name {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.artist-name {
+  font-size: 12px;
+  color: var(--player-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.song-actions {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0; /* Không cho co lại */
+}
+
+/* --- 3. Khối Ở Giữa (Center Block) (Điều-khiển (Controls)) --- */
+.player-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.player-controls-buttons {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* Nút Play/Pause to hơn */
+.play-pause-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--player-primary-color);
+  color: var(--player-text-primary);
+}
+.play-pause-btn:hover {
+  filter: brightness(1.1);
+}
+.play-pause-btn svg {
+  font-size: 24px;
+  /* Dịch-chuyển (Shift) icon play một-chút (a bit) để-căn-giữa (to center) */
+  transform: translateX(1px); 
+}
+/* Icon Pause (IoPause) thường có stroke, không phải fill */
+.play-pause-btn svg[stroke='currentColor'] {
+  transform: translateX(0px); /* Sửa-lỗi-dịch-chuyển (Fix shift) cho (for) icon pause */
+}
+
+
+.progress-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 500px;
+}
+.time-label {
+  font-size: 12px;
+  color: var(--player-text-secondary);
+  width: 40px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* --- 4. Khối Bên Phải (Right Block) (Âm-lượng (Volume), v.v. (etc.)) --- */
+.player-right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.quality-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border: 1px solid var(--player-text-secondary);
+  border-radius: 4px;
+  color: var(--player-text-secondary);
+}
+.quality-btn:hover {
+  border-color: var(--player-text-primary);
+  color: var(--player-text-primary);
+}
+
+.volume-slider-container {
+  width: 100px;
+}
+
+.divider {
+  width: 1px;
+  height: 20px;
+  background-color: var(--player-border);
+  margin: 0 5px;
+}
+
+
+/* --- 5. Các-thành-phần (Components) chung (Chung) --- */
+
+/* Nút chung */
+.player-btn {
+  background: transparent;
+  border: none;
+  color: var(--player-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+  padding: 0; /* Bỏ padding mặc định */
+}
+.player-btn:hover {
+  color: var(--player-text-primary);
+}
+
+/* Nút-icon (Icon-buttons) */
+.icon-btn {
+  padding: 5px;
+}
+.icon-btn svg {
+  font-size: 20px;
+}
+.player-controls-buttons .icon-btn svg {
+  font-size: 24px; /* Icon-điều-khiển (Control icons) to-hơn (are bigger) */
+}
+
+
+/* Thanh-trượt (Slider) (Tiến-trình (Progress) & Âm-lượng (Volume)) */
+.progress-bar {
+  flex-grow: 1;
+}
+.progress-slider,
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background-color: #4c4c4c;
+  outline: none;
+  cursor: pointer;
+  
+  /* Phần-đã-phát (Played part) */
+  background-image: linear-gradient(var(--player-primary-color), var(--player-primary-color));
+  background-repeat: no-repeat;
+  background-size: var(--progress-percent, 0%) 100%;
+}
+
+/* Nút-tròn (Thumb) của-thanh-trượt (slider's) */
+.progress-slider::-webkit-slider-thumb,
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--player-text-primary);
+  cursor: pointer;
+  opacity: 0; /* Ẩn (Hide) nó-theo-mặc-định (by default) */
+  transition: opacity 0.2s ease;
+}
+.progress-slider::-moz-range-thumb,
+.volume-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--player-text-primary);
+  cursor: pointer;
+  border: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Hiển-thị (Show) nút-tròn (thumb) khi-di-chuột-qua (on hover) */
+.progress-bar-container:hover .progress-slider::-webkit-slider-thumb,
+.volume-slider-container:hover .volume-slider::-webkit-slider-thumb {
+  opacity: 1;
+}
+.progress-bar-container:hover .progress-slider::-moz-range-thumb,
+.volume-slider-container:hover .volume-slider::-moz-range-thumb {
+  opacity: 1;
+}

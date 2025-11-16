@@ -1,38 +1,27 @@
-.App {
-  text-align: center;
-}
+/* Giả-sử (Assuming) chiều-cao (heights):
+  Header = 70px
+  PlayerControls = 90px
+  Sidebar = 240px
+*/
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
+.main-content-wrapper {
+  /* 1. Đẩy nó ra-khỏi (away from) Sidebar (240px) */
+  margin-left: 240px;
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
+  /* 2. Đẩy nó ra-khỏi (away from) Header (70px) */
+  padding-top: 70px;
 
-.App-header {
-  background-color: #282c34;
+  /* 3. Đẩy nó ra-khỏi (away from) PlayerControls (90px) */
+  padding-bottom: 90px;
+
+  /* Đảm-bảo (Ensure) nó có-ít-nhất (at least) chiều-cao-màn-hình (screen height) */
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  box-sizing: border-box; /* Rất quan-trọng (Very important) */
 }
 
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* SỬA: Kích-hoạt (Activated) dòng-này (this line)
+  để-nội-dung (so the content) có-màu-nền (has a background color)
+*/
+.main-content-wrapper {
+  background-color: #170f23; 
 }
