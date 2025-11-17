@@ -1,127 +1,89 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const pool = require('./db'); // Đảm-bảo (Ensure) file db.js của-bạn (your) tồn-tại (exists) và-được-cấu-hình (configured)
+const pool = require('./db');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-
-// Lưu ý: Với React app, các file trong public/ sẽ được serve bởi React dev server
-// URL sẽ là relative paths: /audio/song.mp3 và /images/song/cover.jpg
+const PORT = process.env.PORT || 5001;
 
 app.use(cors());
 app.use(express.json());
 
-// Helper function để normalize đường dẫn file
-// Files hiện tại ở: public/audio/ và public/images/song/
-function normalizeFilePath(path, type) {
-  if (!path) {
-    return null;
-  }
-  
-  // Remove leading/trailing whitespace
-  let cleanPath = path.trim();
-  
-  // Remove leading slash if present
-  if (cleanPath.startsWith('/')) {
-    cleanPath = cleanPath.slice(1);
-  }
-  
-  // Remove các prefix cũ nếu có
-  if (cleanPath.startsWith('uploads/')) {
-    cleanPath = cleanPath.slice(8);
-  }
-  
-  // Xử lý theo type
-  if (type === 'audio') {
-    // Nếu chưa có prefix audio/, thêm vào
-    if (!cleanPath.startsWith('audio/')) {
-      cleanPath = `audio/${cleanPath}`;
-    }
-  } else if (type === 'image') {
-    // Nếu chưa có prefix images/, thêm vào
-    if (!cleanPath.startsWith('images/')) {
-      // Nếu chỉ có tên file (không có /), thêm images/song/
-      if (!cleanPath.includes('/')) {
-        cleanPath = `images/song/${cleanPath}`;
-      } else {
-        // Nếu đã có subfolder, chỉ thêm images/
-        cleanPath = `images/${cleanPath}`;
-      }
-    }
-  }
-  
-  return cleanPath;
-}
-
-// API endpoints for serving images and audio files
-app.get('/api/image/:type/:filename', (req, res) => {
-  const { type, filename } = req.params;
-  let folder;
-  if (type === 'song') {
-    folder = 'song';
-  } else if (type === 'artist') {
-    folder = 'artists';
-  } else {
-    return res.status(400).json({ error: 'Invalid type' });
-  }
-  const filePath = path.join(__dirname, '..', 'public', 'images', folder, filename + '.jpg');
-
-  // Check if file exists
-  if (require('fs').existsSync(filePath)) {
-    res.sendFile(filePath);
-  } else {
-    res.status(404).json({ error: 'Image not found' });
-  }
-});
-
+// === CÁC TUYẾN ĐƯỜNG PHỤC VỤ FILES ===
+// Phục vụ file audio
 app.get('/api/audio/:filename', (req, res) => {
-  const filename = req.params.filename;
-  const filePath = path.join(__dirname, '..', 'public', 'audio', filename + '.mp3');
-
-  // Check if file exists
+  const { filename } = req.params;
+  // Thử tìm trong public/audio trước
+  let filePath = path.join(__dirname, '..', 'public', 'audio', filename + '.mp3');
   if (require('fs').existsSync(filePath)) {
     res.sendFile(filePath);
   } else {
-    res.status(404).json({ error: 'Audio file not found' });
+    // Nếu không có, thử trong uploads
+    filePath = path.join(__dirname, 'uploads', 'audio', filename);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error sending audio file:', err);
+        res.status(404).send('File not found');
+      }
+    });
   }
 });
 
-// API endpoint for suggestions (popular songs with artists)
+// Phục vụ file ảnh BÀI HÁT
+app.get('/api/image/song/:filename', (req, res) => {
+  const { filename } = req.params;
+  // Thử tìm trong public/images/song trước
+  let filePath = path.join(__dirname, '..', 'public', 'images', 'song', filename + '.jpg');
+  if (require('fs').existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    // Nếu không có, thử trong uploads
+    filePath = path.join(__dirname, 'uploads', 'images', 'song', filename);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error sending song image file:', err);
+        res.status(404).send('File not found');
+      }
+    });
+  }
+});
+
+// Phục vụ file ảnh ALBUM
+app.get('/api/image/album/:filename', (req, res) => {
+  const { filename } = req.params;
+  const filePath = path.join(__dirname, 'uploads', 'images', 'album', filename);
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error('Error sending album image file:', err);
+      res.status(404).send('File not found');
+    }
+  });
+});
+// =======================================================
+
+
+// API endpoint for suggestions
 app.get('/api/suggestions', async (req, res) => {
   try {
     const [rows] = await pool.execute(`
       SELECT b.BaiHatID as id, b.TieuDe as title, b.AnhBiaBaiHat as imageUrl,
              GROUP_CONCAT(n.TenNgheSi SEPARATOR ', ') as artists,
              b.DuongDanAudio as audioUrl
-
       FROM baihat b
       JOIN baihat_nghesi bn ON b.BaiHatID = bn.BaiHatID
       JOIN nghesi n ON bn.NgheSiID = n.NgheSiID
       GROUP BY b.BaiHatID
-      ORDER BY b.LuotPhat DESC
-      LIMIT 3
+      ORDER BY RAND()
+      LIMIT 9
     `);
 
-    // Chuyển-đổi (Convert) đường-dẫn-tương-đối (relative paths) thành (into) URL
-    // Files hiện tại ở: server/uploads/images/ và server/uploads/audio/
-    // Server sẽ serve qua API endpoints: /api/image/:filename và /api/audio/:filename
-    const fullUrlRows = rows.map(row => {
-      console.log('Processing song:', row.id, '- Original imageUrl:', row.imageUrl, '- Original audioUrl:', row.audioUrl);
-
-      const result = {
-        ...row,
-        // Dùng API endpoints để serve files
-        imageUrl: row.imageUrl ? `http://localhost:${PORT}/api/image/song/${row.imageUrl}` : 'https://placehold.co/300x300/7a3c9e/ffffff?text=No+Image',
-        audioUrl: row.audioUrl ? `http://localhost:${PORT}/api/audio/${row.audioUrl}` : null
-      };
-
-      console.log('Final result for song:', result.id, '- imageUrl:', result.imageUrl, '- audioUrl:', result.audioUrl);
-
-      return result;
-    });
-
-    res.json(fullUrlRows); // Gửi-dữ-liệu (Send) đã-sửa (fixed data)
+    const fullUrlRows = rows.map(row => ({
+      ...row,
+      imageUrl: row.imageUrl ? `http://localhost:${PORT}/api/image/song/${row.imageUrl}` : 'https://placehold.co/300x300/7a3c9e/ffffff?text=No+Image',
+      audioUrl: row.audioUrl ? `http://localhost:${PORT}/api/audio/${row.audioUrl}` : null
+    }));
+    
+    res.json(fullUrlRows);
 
   } catch (error) {
     console.error('Error fetching suggestions:', error);
@@ -129,7 +91,7 @@ app.get('/api/suggestions', async (req, res) => {
   }
 });
 
-// API endpoint for charts (top songs by play count)
+// API endpoint for charts
 app.get('/api/charts', async (req, res) => {
   try {
     const [rows] = await pool.execute(`
@@ -137,24 +99,20 @@ app.get('/api/charts', async (req, res) => {
              GROUP_CONCAT(n.TenNgheSi SEPARATOR ', ') as artists,
              b.AnhBiaBaiHat as cover, b.LuotPhat as playCount,
              b.DuongDanAudio as audioUrl
-
       FROM baihat b
       JOIN baihat_nghesi bn ON b.BaiHatID = bn.BaiHatID
       JOIN nghesi n ON bn.NgheSiID = n.NgheSiID
       GROUP BY b.BaiHatID
       ORDER BY b.LuotPhat DESC
-      LIMIT 3
+      LIMIT 5
     `);
 
-    // Thêm-URL VÀ (AND) rank
-    const chartsWithRank = rows.map((item, index) => {
-      return {
-        ...item,
-        rank: index + 1,
-        cover: item.cover ? `http://localhost:${PORT}/api/image/song/${item.cover}` : 'https://placehold.co/60x60/a64883/fff?text=No+Image',
-        audioUrl: item.audioUrl ? `http://localhost:${PORT}/api/audio/${item.audioUrl}` : null
-      };
-    });
+    const chartsWithRank = rows.map((item, index) => ({
+      ...item,
+      rank: index + 1,
+      cover: item.cover ? `http://localhost:${PORT}/api/image/song/${item.cover}` : 'https://placehold.co/60x60/a64883/fff?text=No+Image',
+      audioUrl: item.audioUrl ? `http://localhost:${PORT}/api/audio/${item.audioUrl}` : null
+    }));
 
     res.json(chartsWithRank);
 
@@ -178,15 +136,12 @@ app.get('/api/albums', async (req, res) => {
       LIMIT 5
     `);
 
-    // Chuyển-đổi (Convert) đường-dẫn-ảnh (image paths) cho (for) albums
-    const fullUrlRows = rows.map(row => {
-      return {
-        ...row,
-        imageUrl: row.imageUrl ? `http://localhost:${PORT}/api/image/song/${row.imageUrl}` : 'https://placehold.co/300x300/4a90e2/ffffff?text=No+Image'
-      };
-    });
+    const fullUrlRows = rows.map(row => ({
+      ...row,
+      imageUrl: row.imageUrl ? `http://localhost:${PORT}/api/image/album/${row.imageUrl}` : 'https://placehold.co/300x300/4a90e2/ffffff?text=No+Image'
+    }));
 
-    res.json(fullUrlRows); // Gửi-dữ-liệu (Send) đã-sửa (fixed data)
+    res.json(fullUrlRows);
 
   } catch (error) {
     console.error('Error fetching albums:', error);
@@ -194,7 +149,59 @@ app.get('/api/albums', async (req, res) => {
   }
 });
 
-// API endpoint for partners (static data for now)
+// API endpoint for album details
+app.get('/api/album/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Get album info
+    const [albumRows] = await pool.execute(`
+      SELECT a.AlbumID as id, a.TieuDe as title, a.NgayPhatHanh as releaseDate, a.AnhBia as imageUrl,
+             GROUP_CONCAT(n.TenNgheSi SEPARATOR ', ') as artists
+      FROM album a
+      LEFT JOIN album_nghesi an ON a.AlbumID = an.AlbumID
+      LEFT JOIN nghesi n ON an.NgheSiID = n.NgheSiID
+      WHERE a.AlbumID = ?
+      GROUP BY a.AlbumID
+    `, [id]);
+
+    if (albumRows.length === 0) {
+      return res.status(404).json({ error: 'Album not found' });
+    }
+
+    // Get songs in album
+    const [songRows] = await pool.execute(`
+      SELECT b.BaiHatID as id, b.TieuDe as title, b.AnhBiaBaiHat as imageUrl,
+             GROUP_CONCAT(n.TenNgheSi SEPARATOR ', ') as artists,
+             b.DuongDanAudio as audioUrl
+      FROM baihat b
+      JOIN baihat_nghesi bn ON b.BaiHatID = bn.BaiHatID
+      JOIN nghesi n ON bn.NgheSiID = n.NgheSiID
+      WHERE b.AlbumID = ?
+      GROUP BY b.BaiHatID
+      ORDER BY b.BaiHatID
+    `, [id]);
+
+    const album = {
+      ...albumRows[0],
+      imageUrl: albumRows[0].imageUrl ? `http://localhost:${PORT}/api/image/album/${albumRows[0].imageUrl}` : 'https://placehold.co/300x300/4a90e2/ffffff?text=No+Image'
+    };
+
+    const songs = songRows.map(song => ({
+      ...song,
+      imageUrl: song.imageUrl ? `http://localhost:${PORT}/api/image/song/${song.imageUrl}` : 'https://placehold.co/60x60/7a3c9e/ffffff?text=No+Image',
+      audioUrl: song.audioUrl ? `http://localhost:${PORT}/api/audio/${song.audioUrl}` : null
+    }));
+
+    res.json({ album, songs });
+
+  } catch (error) {
+    console.error('Error fetching album details:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// API endpoint for partners (static data)
 app.get('/api/partners', (req, res) => {
   const partners = [
     { id: 1, name: 'Universal', logoUrl: 'https://placehold.co/150x80/2f2739/a0a0a0?text=Universal' },
@@ -208,4 +215,45 @@ app.get('/api/partners', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+app.get('/api/search', async (req, res) => {
+  try {
+    const query = req.query.q;
+    if (!query) {
+      return res.json([]);
+    }
+
+    // Tạo (Create) cụm-từ (the term) tìm-kiếm (search) (ví-dụ (e.g.): '%love%')
+    const searchTerm = `%${query}%`;
+
+    const [rows] = await pool.execute(`
+      SELECT 
+        b.BaiHatID as id, 
+        b.TieuDe as title, 
+        b.AnhBiaBaiHat as imageUrl,
+        GROUP_CONCAT(n.TenNgheSi SEPARATOR ', ') as artists,
+        b.DuongDanAudio as audioUrl
+      FROM baihat b
+      JOIN baihat_nghesi bn ON b.BaiHatID = bn.BaiHatID
+      JOIN nghesi n ON bn.NgheSiID = n.NgheSiID
+      WHERE 
+        b.TieuDe LIKE ? OR n.TenNgheSi LIKE ?
+      GROUP BY b.BaiHatID
+      ORDER BY b.LuotPhat DESC
+      LIMIT 10
+    `, [searchTerm, searchTerm]); // Truyền (Pass) 2-lần (twice)
+
+    // Thêm (Add) URL-đầy-đủ (full URLs)
+    const fullUrlRows = rows.map(row => ({
+      ...row,
+      imageUrl: row.imageUrl ? `http://localhost:${PORT}/api/image/song/${row.imageUrl}` : 'https://placehold.co/60x60/7a3c9e/ffffff?text=No+Image',
+      audioUrl: row.audioUrl ? `http://localhost:${PORT}/api/audio/${row.audioUrl}` : null
+    }));
+
+    res.json(fullUrlRows);
+
+  } catch (error) {
+    console.error('Error fetching search results:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
