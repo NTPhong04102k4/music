@@ -1,8 +1,12 @@
 import React from 'react';
-import './PlaylistQueue.css'; // Chúng-ta (We) sẽ-tạo (will create) file này (this file)
+import './PlaylistQueue.css'; 
 import { IoClose } from 'react-icons/io5';
 
-function PlaylistQueue({ playlist, currentSong, onClose, onPlaySong }) {
+const PlaylistQueue = ({ playlist, currentSong, onClose, onPlaySong }) => {
+
+  // Lọc (Filter) ra-danh-sách (the "Next Up" list)
+  const nextUpPlaylist = playlist.filter(song => song.id !== currentSong?.id);
+  
   return (
     // Overlay-để-nhấn-ra-ngoài (Overlay to click out)
     <div className="playlist-queue-overlay" onClick={onClose}>
@@ -18,11 +22,36 @@ function PlaylistQueue({ playlist, currentSong, onClose, onPlaySong }) {
 
         {/* Danh-sách (List) các-bài-hát (of songs) */}
         <div className="queue-list">
-          {playlist.map((song) => (
+
+          {/* Luôn (Always) hiển-thị (show) bài-hát-hiện-tại (the current song) ở-trên-cùng (at the top) */}
+          {currentSong && (
+            <div
+              key={currentSong.id}
+              className="queue-item is-active" // Luôn- (Always) 'active'
+              onClick={() => onPlaySong(currentSong, playlist)}
+            >
+              <img
+                src={currentSong.imageUrl || currentSong.cover}
+                alt={currentSong.title}
+                className="queue-item-cover"
+              />
+              <div className="queue-item-info">
+                <h4>{currentSong.title}</h4>
+                <p>{currentSong.artists}</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Thêm (Added) tiêu-đề (header) "Tiếp theo" (Next Up) */}
+          {nextUpPlaylist.length > 0 && (
+            <h4 className="next-up-header">Tiếp theo</h4>
+          )}
+
+          {/* Chỉ- (Only) render-phần-còn-lại (the rest) của-danh-sách-phát (the playlist) */}
+          {nextUpPlaylist.map((song) => (
             <div
               key={song.id}
-              // === SỬA: Thêm (Add) class 'is-active' nếu-bài-hát (if song) đang-phát (is playing) ===
-              className={`queue-item ${currentSong?.id === song.id ? 'is-active' : ''}`}
+              className="queue-item" // Không- (Not) 'active'
               onClick={() => onPlaySong(song, playlist)}
             >
               <img
@@ -40,6 +69,6 @@ function PlaylistQueue({ playlist, currentSong, onClose, onPlaySong }) {
       </div>
     </div>
   );
-}
+};
 
 export default PlaylistQueue;

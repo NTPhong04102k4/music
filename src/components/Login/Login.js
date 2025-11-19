@@ -3,21 +3,45 @@ import './Login.css';
 import { IoClose, IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5';
 import { FaFacebookF, FaGoogle } from 'react-icons/fa';
 
-function AuthModal({ onClose }) {
+function Login({ onClose, onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!agreeTerms) {
-      alert('Bạn phải đồng ý với Điều khoản và chính sách để đăng nhập.');
-      return;
+    
+
+    try {
+      const response = await fetch('http://localhost:5001/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Lưu token vào localStorage
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+
+        // Gọi callback thành công
+        if (onLoginSuccess) {
+          onLoginSuccess(data.user);
+        } else {
+          onClose();
+        }
+      } else {
+        alert(data.error || 'Đăng nhập thất bại');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Lỗi kết nối server');
     }
-    console.log('Đăng nhập với:', { email, password });
-    // Thêm logic đăng nhập thực tế ở đây
-    onClose(); // Đóng modal sau khi đăng nhập (hoặc xử lý lỗi)
   };
 
   return (
@@ -31,7 +55,7 @@ function AuthModal({ onClose }) {
         <form onSubmit={handleSubmit}>
           <div className="auth-input-group">
             <input
-              type="email"
+              type="text"
               placeholder="Nhập email/username của bạn"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -100,4 +124,4 @@ function AuthModal({ onClose }) {
   );
 }
 
-export default AuthModal;
+export default Login;

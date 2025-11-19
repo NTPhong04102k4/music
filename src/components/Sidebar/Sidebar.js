@@ -26,11 +26,28 @@ const SidebarItem = ({ icon, text, to, isActive, onClick }) => {
   );
 };
 
+
 // Component Sidebar chính
-const Sidebar = ({ onLoginClick }) => {
-  // === SỬA: Đổi (Changed) active-mặc-định (default active) thành (to) 'kham-pha' (vì 'danh-cho-ban' đã bị xóa) ===
+const Sidebar = ({ onLoginClick, isLoggedIn, onViewFavorites, onViewHome }) => {
   const [activeItem, setActiveItem] = useState('kham-pha');
 
+  // Hàm xử lý click vào Thư Viện
+  const handleLibraryClick = (itemName) => {
+    if (!isLoggedIn) {
+      onLoginClick(); // Chưa đăng nhập -> Mở modal
+    } else {
+      setActiveItem(itemName);
+      
+      // === SỬA: Điều hướng khi click ===
+      if (itemName === 'yeu-thich') {
+        if (onViewFavorites) onViewFavorites();
+      }
+    }
+  };
+  const handleHomeClick = () => {
+    setActiveItem('kham-pha');
+    if (onViewHome) onViewHome();
+  }
   return (
     <aside className="zm-sidebar">
       <div className="zm-sidebar-wrapper">
@@ -52,7 +69,7 @@ const Sidebar = ({ onLoginClick }) => {
               icon={<IoBarChartOutline />}
               text="Khám Phá"
               isActive={activeItem === 'kham-pha'}
-              onClick={() => setActiveItem('kham-pha')}
+              onClick={handleHomeClick}
             />
             {/* === SỬA: Đã-xóa (Removed) "Dành Cho Bạn" và "Của Tui" === */}
             {/* === SỬA: Thêm (Added) "Thể Loại" === */}
@@ -74,14 +91,15 @@ const Sidebar = ({ onLoginClick }) => {
                 icon={<IoHeartOutline />}
                 text="Bài hát Yêu thích"
                 isActive={activeItem === 'yeu-thich'}
-                onClick={() => setActiveItem('yeu-thich')}
+                onClick={() => handleLibraryClick('yeu-thich')}
               />
-              {/* === SỬA: Thay-thế (Replaced) "Nghe gần đây" bằng (with) "Danh sách phát" === */}
+              {/* Danh sách phát */}
+              {/* === SỬA: Đã sử dụng handleLibraryClick ở đây === */}
               <SidebarItem
                 icon={<IoListOutline />}
                 text="Danh sách phát"
                 isActive={activeItem === 'danh-sach-phat'}
-                onClick={() => setActiveItem('danh-sach-phat')}
+                onClick={() => handleLibraryClick('danh-sach-phat')}
               />
               <SidebarItem
                 icon={<IoTimeOutline />}
@@ -94,17 +112,19 @@ const Sidebar = ({ onLoginClick }) => {
         </div>
         
         {/* === PHẦN ĐĂNG NHẬP (Đẩy xuống dưới) === */}
-        <div className="login-nav-container">
-          <p className="login-nav-text">
-            Đăng nhập để khám phá nhạc hay
-          </p>
-          <button
-            className="zm-btn login-nav-btn"
-            onClick={onLoginClick} // Gọi-hàm (Call the function) từ (from) App.js
-          >
-            Đăng nhập
-          </button>
-        </div>
+        {!isLoggedIn && (
+          <div className="login-nav-container">
+            <p className="login-nav-text">
+              Đăng nhập để khám phá nhạc hay
+            </p>
+            <button
+              className="zm-btn login-nav-btn"
+              onClick={onLoginClick} 
+            >
+              Đăng nhập
+            </button>
+          </div>
+        )}
 
       </div>
     </aside>

@@ -325,3 +325,11 @@
   color: var(--text-secondary, #a0a0a0);
   line-height: 1.6;
 }
+.player-btn.icon-btn.active {
+  color: var(--player-primary-color); /* Màu tím #9b4de0 */
+}
+/* Riêng cho nút tim khi active (để chắc chắn nó màu tím) */
+.player-btn.icon-btn.active svg {
+  fill: var(--player-primary-color);
+  color: var(--player-primary-color);
+}
