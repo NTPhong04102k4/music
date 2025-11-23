@@ -1,3 +1,0 @@
-- [ ] Synchronize isPlaying state between App and PlayerControls
-- [ ] Modify handlePlaySong to not auto-play if selecting the same song again
-- [ ] Prevent resetting audio when selecting the same song

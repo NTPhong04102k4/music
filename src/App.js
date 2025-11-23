@@ -19,8 +19,14 @@ import UserProfile from './components/UserProfile/UserProfile';
 import AdWeb from './components/AdWeb/AdWeb'; 
 import VipUpgrade from './components/VipUpgrade/VipUpgrade';
 import PaymentPage from './components/PaymentPage/PaymentPage';
-import InvoiceHistory from './components/InvoiceHistory/InvoiceHistory';
+import InvoiceHistory from './components/InvoiceHistory/InvoiceHistory'; 
 import InvoiceDetail from './components/InvoiceDetail/InvoiceDetail';
+import AdminLayout from './components/Admin/AdminLayout/AdminLayout';
+import Dashboard from './components/Admin/Dashboard/Dashboard';
+import SongManager from './components/Admin/SongManager/SongManager';
+import UserManager from './components/Admin/UserManager/UserManager';
+import AlbumManager from './components/Admin/AlbumManager/AlbumManager'; 
+import AlbumLibrary from './components/AlbumLibrary/AlbumLibrary';
 
 
 function App() {
@@ -29,41 +35,55 @@ function App() {
   const [playlist, setPlaylist] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   
-  // currentView có thể là: 'main', 'album', 'favorites', 'history', 'playlists', 'playlist-detail', 'profile', 'vip-upgrade', 'payment', 'invoices', 'invoice-detail'
-  const [currentView, setCurrentView] = useState('main'); 
-  const [selectedItemId, setSelectedItemId] = useState(null);
-  
-  // State UI Modals
+// Thêm state view cho Admin
+  const [adminView, setAdminView] = useState('dashboard');
+
+  // currentView có thể là: 'main', 'album', 'favorites'
+  const [currentView, setCurrentView] = useState('main');   
+  // Trạng thái UI
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showPlaylistQueue, setShowPlaylistQueue] = useState(false);
-  const [showAddToPlaylistModal, setShowAddToPlaylistModal] = useState(false);
-  const [showSongActionModal, setShowSongActionModal] = useState(false);
-  
-  // State Data
-  const [songToAddToPlaylist, setSongToAddToPlaylist] = useState(null);
-  const [songForAction, setSongForAction] = useState(null);
-  const [selectedVipPackage, setSelectedVipPackage] = useState(null);
 
-  // State Auth & User
+  // Trạng thái Đăng nhập
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+  const [selectedItemId, setSelectedItemId] = useState(null); 
+
+  // State lưu gói VIP đang chọn để thanh toán
+  const [selectedVipPackage, setSelectedVipPackage] = useState(null);
+
+  // Trạng thái yêu thích (quản lý tập trung tại App)
   const [favorites, setFavorites] = useState(new Set());
 
   // === MỚI: Ref để theo dõi thời gian nghe của bài hát hiện tại ===
+  // Dùng ref để không gây re-render
   const listenTimeRef = useRef(0); 
   const lastSongIdRef = useRef(null);
-  const hasRecordedHistoryRef = useRef(false); 
+  const hasRecordedHistoryRef = useRef(false); // Đã ghi nhận cho bài này chưa?
+
+  // State cho Modal thêm vào playlist
+  const [showAddToPlaylistModal, setShowAddToPlaylistModal] = useState(false);
+  const [songToAddToPlaylist, setSongToAddToPlaylist] = useState(null);
+// === MỚI: State cho Modal Tùy chọn bài hát ===
+  const [showSongActionModal, setShowSongActionModal] = useState(false);
+  const [songForAction, setSongForAction] = useState(null);
 
   // --- EFFECTS ---
+  // Kiểm tra đăng nhập khi load trang
   useEffect(() => {
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     if (token && userData) {
+      const parsedUser = JSON.parse(userData);
       setIsLoggedIn(true);
-      setUser(JSON.parse(userData));
+      setUser(parsedUser);
+      
+      // Nếu là admin, chuyển thẳng vào dashboard khi reload (tùy chọn)
+    if (parsedUser.role === 'admin') setCurrentView('admin-dashboard');
     }
   }, []);
 
+  // Tải danh sách yêu thích khi đăng nhập
   useEffect(() => {
     if (isLoggedIn) {
       fetch('http://localhost:5001/api/favorites', {
@@ -80,6 +100,21 @@ function App() {
     }
   }, [isLoggedIn]);
 
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetch('http://localhost:5001/api/favorites', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        const favSet = new Set(data.map(song => song.id));
+        setFavorites(favSet);
+      })
+      .catch(err => console.error("Lỗi tải yêu thích:", err));
+    } else {
+      setFavorites(new Set());
+    }
+  }, [isLoggedIn]);
   // --- LOGIC GHI NHẬN LỊCH SỬ ---
   const recordHistory = useCallback(async (songId) => {
     if (!isLoggedIn) return;
@@ -99,23 +134,90 @@ function App() {
     }
   }, [isLoggedIn]);
 
+  // Handler xem thư viện Album (từ Sidebar)
+  const handleViewAlbumLibrary = useCallback(() => {
+    setCurrentView('albums');
+    setSelectedItemId(null);
+  }, []);
+  // Hàm được gọi mỗi giây từ PlayerControls
   const handleTimeUpdate = useCallback((currentTime) => {
     if (!currentSong) return;
 
+    // Nếu đổi bài hát, reset bộ đếm
     if (currentSong.id !== lastSongIdRef.current) {
         lastSongIdRef.current = currentSong.id;
         listenTimeRef.current = 0;
         hasRecordedHistoryRef.current = false;
     }
 
+    // Tăng thời gian nghe (giả định hàm này gọi mỗi ~0.2-1s)
+    // Tuy nhiên, currentTime là thời gian thực của bài hát. 
+    // Để đơn giản, ta so sánh currentTime > 30s (nếu người dùng tua qua 30s thì cũng tính)
+    // HOẶC chuẩn hơn: dùng setInterval đếm giây thực tế. 
+    // Ở đây tôi dùng cách đơn giản: Nếu bài hát chạy đến giây thứ 30 -> Ghi nhận.
+    
     if (!hasRecordedHistoryRef.current && currentTime >= 30) {
         hasRecordedHistoryRef.current = true;
         recordHistory(currentSong.id);
     }
   }, [currentSong, recordHistory]);
 
+// Hàm render nội dung Admin
+  const renderAdminContent = () => {
+      switch (adminView) {
+          case 'dashboard': return <Dashboard />;
+          case 'songs': return <SongManager />;
+          // case 'albums': return <AlbumManager />;
+          // case 'users': return <UserManager />;
+          default: return <Dashboard />;
+      }
+  };
+  
 
-  // --- HANDLERS ---
+  // --- HÀM XỬ LÝ LOGIC (HANDLERS) ---
+  
+  // === VIP & PAYMENT HANDLERS ===
+  
+  // 1. Handler khi bấm "Mua Ngay"
+  const handleBuyVipPackage = useCallback((packageInfo) => {
+      setSelectedVipPackage(packageInfo);
+      setCurrentView('payment'); // Chuyển sang trang thanh toán
+  }, []);
+
+  // 2. Handler khi thanh toán thành công
+  const handlePaymentSuccess = useCallback(() => {
+      alert("Cảm ơn bạn đã nâng cấp VIP!");
+      setCurrentView('main'); 
+      setSelectedVipPackage(null);
+  }, []);
+
+  // 3. Handler quay lại từ trang thanh toán
+  const handleBackFromPayment = useCallback(() => {
+      setCurrentView('vip-upgrade');
+      setSelectedVipPackage(null);
+  }, []);
+
+  // 4. Handler mở trang nâng cấp VIP từ Header
+  const handleUpgradeVip = useCallback(() => {
+    if (isLoggedIn) {
+        setCurrentView('vip-upgrade');
+        setSelectedItemId(null);
+    } else {
+        setShowAuthModal(true);
+    }
+  }, [isLoggedIn]);
+    // Handler Xem danh sách hóa đơn
+  const handleViewInvoices = useCallback(() => {
+    setCurrentView('invoices');
+    setSelectedItemId(null);
+  }, []);
+
+  // Handler Xem chi tiết hóa đơn
+  const handleViewInvoiceDetail = useCallback((invoiceId) => {
+    setSelectedItemId(invoiceId);
+    setCurrentView('invoice-detail');
+  }, []);
+  // 1. Xử lý yêu thích
   const handleToggleFavorite = useCallback(async (songId) => {
     if (!isLoggedIn) {
       alert('Vui lòng đăng nhập để sử dụng tính năng này');
@@ -141,16 +243,19 @@ function App() {
     }
   }, [isLoggedIn]);
 
+  // 2. Xử lý phát nhạc
   const handlePlaySong = useCallback((song, songList = []) => {
+    // Reset trạng thái lịch sử khi chọn bài mới
     listenTimeRef.current = 0;
     hasRecordedHistoryRef.current = false;
     lastSongIdRef.current = song.id;
     setCurrentSong(song);
-    if (songList && songList.length > 0) {
+    if (songList.length > 0) {
       setPlaylist(songList);
       const index = songList.findIndex(s => s.id === song.id);
       setCurrentIndex(index >= 0 ? index : -1);
     } else {
+      // Nếu không có danh sách, tạo danh sách chỉ có 1 bài
       setPlaylist([song]);
       setCurrentIndex(0);
     }
@@ -170,23 +275,99 @@ function App() {
     setCurrentSong(playlist[prevIndex]);
   }, [currentIndex, playlist]);
 
-  const handleViewAlbum = useCallback((id) => { setSelectedItemId(id); setCurrentView('album'); }, []);
-  const handleViewPlaylistDetail = useCallback((id) => { setSelectedItemId(id); setCurrentView('playlist-detail'); }, []);
-  const handleViewPlaylistLibrary = useCallback(() => { setCurrentView('playlists'); setSelectedItemId(null); }, []);
-  const handleViewFavorites = useCallback(() => { setCurrentView('favorites'); setSelectedItemId(null); }, []);
-  const handleViewHistory = useCallback(() => { setCurrentView('history'); setSelectedItemId(null); }, []);
-  const handleViewHome = useCallback(() => { setCurrentView('main'); setSelectedItemId(null); }, []);
-  const handleBackToMain = useCallback(() => { setCurrentView('main'); setSelectedItemId(null); }, []);
+  // 3. Xử lý điều hướng (Navigation)
+  const handleViewAlbum = useCallback((albumId) => {
+    setSelectedItemId(albumId);
+    setCurrentView('album');
+  }, []);
   
-  const handleLoginClick = useCallback(() => { setShowAuthModal(true); }, []);
-  const handleCloseAuthModal = useCallback(() => { setShowAuthModal(false); }, []);
-  const handleLoginSuccess = useCallback((userData) => { setIsLoggedIn(true); setUser(userData); setShowAuthModal(false); }, []);
-  const handleLogout = useCallback(() => { setIsLoggedIn(false); setUser(null); localStorage.removeItem('token'); localStorage.removeItem('user'); setCurrentView('main'); }, []);
-  const togglePlaylistQueue = useCallback(() => { setShowPlaylistQueue(prev => !prev); }, []);
+  const handleViewFavorites = useCallback(() => {
+    setCurrentView('favorites');
+    setSelectedItemId(null);
+  }, []);
 
-  const handleOpenSongAction = useCallback((song) => { setSongForAction(song); setShowSongActionModal(true); }, []);
-  
+  // Handler xem danh sách Playlist
+  const handleViewPlaylistLibrary = useCallback(() => {
+    setCurrentView('playlists');
+    setSelectedItemId(null);
+  }, []);
+
+  // Handler xem chi tiết Playlist
+  const handleViewPlaylistDetail = useCallback((playlistId) => {
+    setSelectedItemId(playlistId);
+    setCurrentView('playlist-detail');
+  }, []);
+  const handleViewHistory = useCallback(() => {
+    setCurrentView('history');
+    setSelectedItemId(null);
+  }, []);
+
+  const handleViewHome = useCallback(() => {
+    setCurrentView('main');
+    setSelectedItemId(null);
+  }, []);
+
+  const handleBackToMain = useCallback(() => {
+    setCurrentView('main');
+    setSelectedItemId(null);
+  }, []);
+  // Handler Đổi mật khẩu
+  const handleChangePassword = useCallback(() => {
+    alert("Chức năng Đổi mật khẩu sẽ được cập nhật sau!");
+    // Hoặc set state để mở modal đổi mật khẩu
+  }, []);
+// Hàm chuyển sang trang thông tin tài khoản
+  const handleViewProfile = useCallback(() => {
+    setCurrentView('profile');
+    setSelectedItemId(null);
+  }, []);
+  // 4. Xử lý Đăng nhập/Modal
+  const handleLoginClick = useCallback(() => {
+    setShowAuthModal(true);
+  }, []);
+
+  const handleCloseAuthModal = useCallback(() => {
+    setShowAuthModal(false);
+  }, []);
+
+ const handleLoginSuccess = useCallback((userData) => {
+    setIsLoggedIn(true);
+    setUser(userData);
+    setShowAuthModal(false);
+
+    if (userData.role === 'admin') {
+        setCurrentView('admin-dashboard'); // Chuyển sang Admin
+    } else {
+        setCurrentView('main'); // Chuyển sang User trang chủ
+    }
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    setIsLoggedIn(false);
+    setUser(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setCurrentView('main'); // Về trang chủ khi logout
+    
+    // Dừng nhạc khi logout (tùy chọn)
+    setCurrentSong(null);
+    setPlaylist([]);
+  }, []);
+
+  // 5. Xử lý Danh sách phát (Queue)
+  const togglePlaylistQueue = useCallback(() => {
+    setShowPlaylistQueue(currentValue => !currentValue); 
+  }, []);
+
+  // 1. Hàm mở bảng Tùy chọn (3 chấm)
+  const handleOpenSongAction = useCallback((song) => {
+    setSongForAction(song);
+    setShowSongActionModal(true);
+  }, []);
+
+  // 2. Hàm mở bảng Thêm vào Playlist (được gọi từ bảng Tùy chọn)
   const handleOpenAddToPlaylist = useCallback((song) => {
+    // Logic này có thể giữ nguyên hoặc dùng lại logic cũ
     if (!isLoggedIn) {
         alert("Vui lòng đăng nhập để sử dụng tính năng này");
         return;
@@ -195,6 +376,7 @@ function App() {
     setShowAddToPlaylistModal(true);
   }, [isLoggedIn]);
 
+  // 3. Hàm thực hiện thêm vào playlist
   const handleAddToPlaylist = useCallback(async (playlistId, songId) => {
     try {
         const token = localStorage.getItem('token');
@@ -218,64 +400,45 @@ function App() {
         alert("Lỗi kết nối server");
     }
   }, []);
+  // === RENDER ADMIN VIEW ===
+  // Nếu currentView bắt đầu bằng 'admin-' và user là admin
+  if (currentView.startsWith('admin-')) {
+      if (!user || user.role !== 'admin') {
+          // Bảo mật cơ bản: nếu không phải admin mà cố vào, đá về trang chủ
+          setCurrentView('main');
+          return null;
+      }
 
-  const handleBuyVipPackage = useCallback((packageInfo) => {
-      setSelectedVipPackage(packageInfo);
-      setCurrentView('payment'); 
-  }, []);
+      return (
+          <AdminLayout 
+              currentView={currentView.replace('admin-', '')} // dashboard, songs
+              onNavigate={(view) => setCurrentView(`admin-${view}`)}
+              onLogout={handleLogout}
+          >
+              {currentView === 'admin-dashboard' && <Dashboard />}
+              {currentView === 'admin-songs' && <SongManager />}
+              {currentView === 'admin-users' && <UserManager />}
+              {currentView === 'admin-albums' && <AlbumManager />}
 
-  const handlePaymentSuccess = useCallback(() => {
-      alert("Cảm ơn bạn đã nâng cấp VIP!");
-      setCurrentView('main'); 
-      setSelectedVipPackage(null);
-  }, []);
+              {/* Thêm các trang admin khác ở đây */}
+          </AdminLayout>
+      );
+  }
+  
 
-  const handleBackFromPayment = useCallback(() => {
-      setCurrentView('vip-upgrade');
-      setSelectedVipPackage(null);
-  }, []);
-
-  const handleUpgradeVip = useCallback(() => {
-    if (isLoggedIn) {
-        setCurrentView('vip-upgrade');
-        setSelectedItemId(null);
-    } else {
-        setShowAuthModal(true);
-    }
-  }, [isLoggedIn]);
-
-  const handleChangePassword = useCallback(() => {
-    alert("Chức năng Đổi mật khẩu sẽ được cập nhật sau!");
-  }, []);
-
-  const handleViewProfile = useCallback(() => {
-    setCurrentView('profile');
-    setSelectedItemId(null);
-  }, []);
-
-  // === SỬA: Handler Xem danh sách hóa đơn ===
-  const handleViewInvoices = useCallback(() => {
-    setCurrentView('invoices');
-    setSelectedItemId(null);
-  }, []);
-
-  // === SỬA: Handler Xem chi tiết hóa đơn ===
-  const handleViewInvoiceDetail = useCallback((invoiceId) => {
-    setSelectedItemId(invoiceId);
-    setCurrentView('invoice-detail');
-  }, []);
-
-
+ // === RENDER USER VIEW (Mặc định) ===  
   return (
     <div className="app">
+      
       <AdWeb isLoggedIn={isLoggedIn} />
 
       <Sidebar 
         onLoginClick={handleLoginClick} 
         isLoggedIn={isLoggedIn}
+        onViewAlbums={handleViewAlbumLibrary}
         onViewFavorites={handleViewFavorites}
-        onViewHistory={handleViewHistory}
         onViewPlaylists={handleViewPlaylistLibrary}
+        onViewHistory={handleViewHistory}
         onViewHome={handleViewHome}
       />
       
@@ -288,7 +451,6 @@ function App() {
         onChangePassword={handleChangePassword}
         onViewProfile={handleViewProfile}
         onUpgradeVip={handleUpgradeVip}
-        // === SỬA: Truyền hàm xuống Header ===
         onViewInvoices={handleViewInvoices}
       /> 
       
@@ -296,23 +458,44 @@ function App() {
         currentSong={currentSong}
         onNext={handleNextSong}
         onPrev={handlePrevSong}
-        onTogglePlaylist={togglePlaylistQueue}
-        showPlaylistQueue={showPlaylistQueue}
+        onTogglePlaylist={togglePlaylistQueue} // Hàm bật/tắt queue
+        showPlaylistQueue={showPlaylistQueue}  // Trạng thái để highlight nút
         isFavorite={currentSong ? favorites.has(currentSong.id) : false}
         onToggleFavorite={() => currentSong && handleToggleFavorite(currentSong.id)}
         onTimeUpdate={handleTimeUpdate}
+        onOpenSongAction={handleOpenSongAction}
       />
 
-      {/* Các Modal */}
-      {showAuthModal && <AuthModal onClose={handleCloseAuthModal} onLoginSuccess={handleLoginSuccess} />}
-      {showPlaylistQueue && <PlaylistQueue playlist={playlist} currentSong={currentSong} onClose={togglePlaylistQueue} onPlaySong={handlePlaySong} />}
+      {/* Modal Đăng nhập */}
+      {showAuthModal && (
+        <AuthModal 
+          onClose={handleCloseAuthModal} 
+          onLoginSuccess={handleLoginSuccess} 
+        />
+      )}
+
+      {/* Sidebar Danh sách phát - PHẦN QUAN TRỌNG ĐỂ HIỆN DANH SÁCH NHẠC */}
+      {showPlaylistQueue && (
+        <PlaylistQueue
+          playlist={playlist}
+          currentSong={currentSong}
+          onClose={togglePlaylistQueue}
+          onPlaySong={handlePlaySong} 
+        />
+      )}
+
+      {/* === MỚI: Render Modal Tùy Chọn === */}
       {showSongActionModal && songForAction && (
         <SongActionModal 
             song={songForAction}
             onClose={() => setShowSongActionModal(false)}
-            onAddToPlaylist={handleOpenAddToPlaylist}
+            isFavorite={favorites.has(songForAction.id)}
+            onToggleFavorite={handleToggleFavorite}
+            onAddToPlaylist={handleOpenAddToPlaylist} // Chuyển tiếp sang modal thêm playlist
         />
       )}
+
+      {/* === MỚI: Render Modal Thêm vào Playlist === */}
       {showAddToPlaylistModal && songToAddToPlaylist && (
         <AddToPlaylistModal 
             song={songToAddToPlaylist}
@@ -321,24 +504,42 @@ function App() {
         />
       )}
 
+      {/* Nội dung chính */}
       <main className="main-content-wrapper">
         {currentView === 'main' && (
           <MainContent 
             onPlaySong={handlePlaySong} 
             onViewAlbum={handleViewAlbum}
             isLoggedIn={isLoggedIn}
-            favorites={favorites}
+            favorites={favorites} // Truyền xuống nếu cần dùng để hiển thị trạng thái
+            // onToggleFavorite đã chuyển xuống PlayerControls nên có thể không cần ở đây nữa
+            // trừ khi bạn muốn nút tim xuất hiện lại trên danh sách bài hát
+            onAddToPlaylist={handleOpenAddToPlaylist}
             onOpenSongAction={handleOpenSongAction}
           />
         )}
+        {currentView === 'albums' && (
+            <AlbumLibrary onViewAlbum={handleViewAlbum} />
+        )}
+
+        {currentView === 'album' && (
+          <AlbumDetail
+            albumId={selectedItemId}
+            onBack={handleBackToMain}
+            onPlaySong={handlePlaySong}
+            onAddToPlaylist={handleOpenAddToPlaylist}
+          />
+        )}
         
-        {currentView === 'album' && <AlbumDetail albumId={selectedItemId} onBack={handleBackToMain} onPlaySong={handlePlaySong} />}
-        {currentView === 'favorites' && <FavoritesLibrary onPlaySong={handlePlaySong} />}
-        {currentView === 'history' && <ListenHistory onPlaySong={handlePlaySong} />}
-        {currentView === 'playlists' && <PlaylistLibrary onViewPlaylistDetail={handleViewPlaylistDetail} />}
-        {currentView === 'playlist-detail' && <PlaylistDetail playlistId={selectedItemId} onBack={handleViewPlaylistLibrary} onPlaySong={handlePlaySong} />}
-        {currentView === 'profile' && <UserProfile user={user} />}
-        
+        {currentView === 'favorites' && (
+          <FavoritesLibrary 
+            onPlaySong={handlePlaySong}
+            onAddToPlaylist={handleOpenAddToPlaylist}
+            onOpenSongAction={handleOpenSongAction}
+          />
+        )}
+
+        {/* Trang Nâng cấp VIP */}
         {currentView === 'vip-upgrade' && (
             <VipUpgrade onBuy={handleBuyVipPackage} />
         )}
@@ -350,7 +551,6 @@ function App() {
                 onPaymentSuccess={handlePaymentSuccess}
             />
         )}
-
         {/* === MỚI: Render trang Lịch sử giao dịch === */}
         {currentView === 'invoices' && (
             <InvoiceHistory onViewInvoiceDetail={handleViewInvoiceDetail} />
@@ -363,6 +563,32 @@ function App() {
                 onBack={handleViewInvoices} 
             />
         )}
+
+        {currentView === 'history' && (
+            <ListenHistory 
+              onPlaySong={handlePlaySong} 
+              onAddToPlaylist={handleOpenAddToPlaylist}
+            />
+            
+        )}
+        {/* === MỚI: Render trang Playlist Library === */}
+        {currentView === 'playlists' && (
+            <PlaylistLibrary onViewPlaylistDetail={handleViewPlaylistDetail} />
+        )}
+
+        {/* === MỚI: Render trang Chi tiết Playlist === */}
+        {currentView === 'playlist-detail' && (
+            <PlaylistDetail 
+                playlistId={selectedItemId} // Dùng selectedItemId
+                onBack={handleViewPlaylistLibrary} // Back về danh sách playlist
+                onPlaySong={handlePlaySong}
+                onAddToPlaylist={handleOpenAddToPlaylist}
+            />
+        )}
+        {currentView === 'profile' && (
+          <UserProfile user={user} />
+        )}
+        
       </main>
     </div>
   );

@@ -1,7 +1,0 @@
-- [ ] Move isPlaying state from PlayerControls to App.js
-- [ ] Pass isPlaying, setIsPlaying, and onTogglePlay to PlayerControls
-- [ ] Update PlayerControls to use props for isPlaying and call onTogglePlay
-- [ ] Modify handlePlaySong in App.js to set isPlaying to true only for new songs
-- [ ] Add logic in PlayerControls to prevent audio reset when selecting the same song
-- [ ] Update audio event handlers in PlayerControls to use setIsPlaying
-- [ ] Test the web to ensure no errors and proper playback

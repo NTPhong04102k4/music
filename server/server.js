@@ -4,11 +4,14 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const pool = require('./db'); // Đảm bảo file db.js đã được cấu hình đúng
+const adminRoutes = require('./routes/admin'); 
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 const JWT_SECRET = 'your-secret-key-123'; // Nên đặt trong biến môi trường
 const BASE_URL = `http://localhost:${PORT}`;
+
+
 
 app.use(cors());
 app.use(express.json());
@@ -17,6 +20,27 @@ app.use(express.json());
 // 1. CÁC TUYẾN ĐƯỜNG PHỤC VỤ FILE (STATIC FILES)
 // =======================================================
 app.use('/uploads', express.static(path.join(__dirname, '../public')));
+
+// 1. MIDDLEWARE XÁC THỰC (KHAI BÁO TRƯỚC KHI DÙNG)
+// =======================================================
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Thiếu token xác thực' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Token không hợp lệ hoặc đã hết hạn' });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+app.use('/api/admin', authenticateToken, adminRoutes);
 
 // =======================================================
 // 1.1 API PHỤC VỤ FILE ẢNH VÀ AUDIO
@@ -78,17 +102,12 @@ app.get('/api/image/album/:filename', (req, res) => {
 // =======================================================
 app.post('/api/login', async (req, res) => {
   try {
-    // Frontend gửi lên { email, password }
-    // Biến 'email' ở đây là giá trị người dùng nhập vào (có thể là Email hoặc Tên đăng nhập)
     const { email, password } = req.body; 
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Vui lòng nhập tên đăng nhập/email và mật khẩu' });
     }
 
-    // Query bảng `nguoidung`
-    // Tìm theo `Email` HOẶC `TenDangNhap`
-    // (Dấu ? thứ nhất là email, dấu ? thứ hai cũng là email - để so sánh với cả 2 cột)
     const [users] = await pool.execute(
       'SELECT * FROM nguoidung WHERE Email = ? OR TenDangNhap = ?',
       [email, email]
@@ -100,19 +119,14 @@ app.post('/api/login', async (req, res) => {
 
     const user = users[0];
 
-    // Kiểm tra trạng thái tài khoản (nếu có cột TrangThai)
     if (user.TrangThai && user.TrangThai !== 'active') {
          return res.status(403).json({ error: 'Tài khoản đã bị khóa' });
     }
 
-    // Kiểm tra mật khẩu
     let isValidPassword = false;
-    // 1. So sánh trực tiếp (nếu DB lưu password thô)
     if (user.MatKhau === password) {
         isValidPassword = true;
     } else {
-        // 2. So sánh bcrypt (nếu DB lưu hash)
-        // Catch lỗi để tránh crash nếu format hash sai
         isValidPassword = await bcrypt.compare(password, user.MatKhau).catch(() => false);
     }
 
@@ -120,17 +134,18 @@ app.post('/api/login', async (req, res) => {
       return res.status(401).json({ error: 'Mật khẩu không đúng' });
     }
 
-    // Tạo Token
+    // === LOGIC PHÂN QUYỀN ĐƠN GIẢN ===
+    let role = 'user';
+    if (user.TenDangNhap === 'admin') {
+        role = 'admin';
+    }
+
     const token = jwt.sign(
-      { userId: user.NguoiDungID, username: user.TenDangNhap },
+      { userId: user.NguoiDungID, username: user.TenDangNhap, role: role }, // Thêm role vào token
       JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    // Trả về thông tin User
-    // Mapping: 
-    // - DB: HoVaTen -> Frontend: displayName
-    // - DB: AnhDaiDien -> Frontend: avatar
     res.json({
       message: 'Đăng nhập thành công',
       token,
@@ -138,10 +153,11 @@ app.post('/api/login', async (req, res) => {
         id: user.NguoiDungID,
         username: user.TenDangNhap,
         email: user.Email,
-        displayName: user.TenHienThi || user.TenDangNhap, // Fallback nếu HoVaTen null
-        avatar: user.AnhDaiDien
-          ? (user.AnhDaiDien.startsWith('http') ? user.AnhDaiDien : `${BASE_URL}/uploads/${user.AnhDaiDien}.jpg`)
-          : `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.TenDangNhap}` // Avatar mặc định
+        displayName: user.HoVaTen || user.TenDangNhap, 
+        avatar: user.AnhDaiDien 
+          ? (user.AnhDaiDien.startsWith('http') ? user.AnhDaiDien : `${BASE_URL}/uploads/${user.AnhDaiDien}`)
+          : `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.TenDangNhap}`,
+        role: role // Trả về role cho frontend
       }
     });
 
@@ -150,7 +166,45 @@ app.post('/api/login', async (req, res) => {
     res.status(500).json({ error: 'Lỗi server: ' + error.message });
   }
 });
+// API ĐĂNG KÝ (REGISTER)
+// =======================================================
+app.post('/api/register', async (req, res) => {
+  try {
+    const { username, email, password, displayName } = req.body;
 
+    // 1. Validate dữ liệu
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: 'Vui lòng nhập đầy đủ thông tin bắt buộc' });
+    }
+
+    // 2. Kiểm tra xem Username hoặc Email đã tồn tại chưa
+    const [existingUsers] = await pool.execute(
+      'SELECT * FROM nguoidung WHERE TenDangNhap = ? OR Email = ?',
+      [username, email]
+    );
+
+    if (existingUsers.length > 0) {
+      return res.status(409).json({ error: 'Tên đăng nhập hoặc Email đã tồn tại' });
+    }
+
+    // 3. Mã hóa mật khẩu
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // 4. Insert vào database
+    // Mặc định TrangThai = 'active', AnhDaiDien = null (sẽ dùng avatar mặc định ở frontend)
+    await pool.execute(
+      'INSERT INTO nguoidung (TenDangNhap, Email, MatKhau, TenHienThi, TrangThai, NgayThamGia) VALUES (?, ?, ?, ?, ?, NOW())',
+      [username, email, hashedPassword, displayName || username, 'active']
+    );
+
+    res.status(201).json({ message: 'Đăng ký tài khoản thành công!' });
+
+  } catch (error) {
+    console.error('Register Error:', error);
+    res.status(500).json({ error: 'Lỗi server: ' + error.message });
+  }
+});
 // =======================================================
 // 3. CÁC API DỮ LIỆU (CÔNG KHAI)
 // =======================================================
@@ -337,18 +391,6 @@ app.get('/api/partners', (req, res) => {
 // =======================================================
 // 4. API NGƯỜI DÙNG (CẦN TOKEN - AUTHENTICATED)
 // =======================================================
-
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'Thiếu token' });
-
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ error: 'Token không hợp lệ' });
-        req.user = user;
-        next();
-    });
-};
 
 // Lấy danh sách yêu thích
 // Lấy danh sách yêu thích (Đã sửa lỗi SQL mode & dùng LEFT JOIN)

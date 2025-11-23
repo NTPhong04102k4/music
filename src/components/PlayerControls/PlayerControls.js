@@ -9,7 +9,7 @@ import {
   IoMicOutline, IoListOutline,
 } from 'react-icons/io5';
 
-function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPlaylistQueue, isFavorite, onToggleFavorite, onTimeUpdate }) {
+function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPlaylistQueue, isFavorite, onToggleFavorite, onTimeUpdate,onOpenSongAction }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(80);
@@ -174,7 +174,13 @@ function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPla
              {isFavorite ? <IoHeart className="heart-active" /> : <IoHeartOutline />}
           </button>
         
-          <button className="player-btn icon-btn">
+         <button 
+              className="player-btn icon-btn"
+              // Khi click, gọi hàm mở modal và truyền bài hát hiện tại vào
+              onClick={() => currentSong && onOpenSongAction(currentSong)}
+              disabled={!currentSong}
+              title="Khác"
+          >
             <IoEllipsisHorizontal />
           </button>
         </div>

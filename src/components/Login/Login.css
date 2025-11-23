@@ -279,3 +279,27 @@
     grid-template-columns: 1fr; /* Stack buttons on small screens */
   }
 }
+.auth-footer-switch {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.auth-footer-switch span {
+    color: var(--player-primary-color);
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: 5px;
+    text-decoration: none;
+}
+
+.auth-footer-switch span:hover {
+    text-decoration: underline;
+}
+
+/* Điều chỉnh lại padding modal nếu form dài */
+.auth-modal-content {
+    max-height: 90vh; /* Tránh bị tràn màn hình nếu form đăng ký dài */
+    overflow-y: auto; /* Cuộn nếu cần */
+}

@@ -5,7 +5,6 @@ import { IoChevronForward, IoPlay, IoRefresh, IoEllipsisHorizontal } from 'react
 function MainContent({ onPlaySong, onViewAlbum, onOpenSongAction, isLoggedIn, favorites, onToggleFavorite }) {
   const [suggestions, setSuggestions] = useState([]);
   const [chartData, setChartData] = useState([]);
-  const [albumData, setAlbumData] = useState([]);
   const [partners, setPartners] = useState([]);
 
   // --- FETCH DATA ---
@@ -23,13 +22,6 @@ function MainContent({ onPlaySong, onViewAlbum, onOpenSongAction, isLoggedIn, fa
       .catch(error => console.error('Error fetching charts:', error));
   };
 
-  const fetchAlbumData = () => {
-    fetch('http://localhost:5001/api/albums')
-      .then(response => response.json())
-      .then(data => setAlbumData(data))
-      .catch(error => console.error('Error fetching albums:', error));
-  };
-
   const fetchPartners = () => {
      fetch('http://localhost:5001/api/partners')
       .then(response => response.json())
@@ -40,7 +32,6 @@ function MainContent({ onPlaySong, onViewAlbum, onOpenSongAction, isLoggedIn, fa
   useEffect(() => {
     fetchSuggestions();
     fetchChartData();
-    fetchAlbumData();
     fetchPartners();
   }, []);
 
@@ -143,32 +134,7 @@ function MainContent({ onPlaySong, onViewAlbum, onOpenSongAction, isLoggedIn, fa
           ))}
         </div>
       </section>
-
-      {/* === ALBUM MỚI === */}
-      <section className="content-section">
-        <div className="section-header">
-          <h2>Album Mới</h2>
-          <a href="#" className="see-all">TẤT CẢ <IoChevronForward /></a>
-        </div>
-        <div className="carousel-grid five-columns">
-          {albumData.map((item) => (
-            <div className="song-card" key={item.id} onClick={() => onViewAlbum(item.id)} style={{cursor: 'pointer'}}>
-              <div className="card-image">
-                <img
-                  src={item.imageUrl || 'https://placehold.co/300x300/4a90e2/ffffff?text=No+Image'}
-                  alt={item.title}
-                  onError={(e) => { e.target.src = 'https://placehold.co/300x300/4a90e2/ffffff?text=No+Image'; }}
-                />
-              </div>
-              <div className="card-info">
-                <h3>{item.title}</h3>
-                <p>{item.artists || 'Nhiều nghệ sĩ'}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
+    
       {/* === ĐỐI TÁC === */}
       <section className="content-section partners-section">
         <div className="section-header"><h2>Đối Tác Âm Nhạc</h2></div>

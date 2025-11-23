@@ -1,15 +1,18 @@
 import React from 'react';
 import './SongActionModal.css';
-import { IoClose, IoAddCircleOutline, IoHeadset, IoHeartOutline, IoHeart } from 'react-icons/io5';
+import { 
+    IoClose, IoAddCircleOutline, IoHeadset, IoHeartOutline, IoHeart, IoWarningOutline
+} from 'react-icons/io5';
 
-function SongActionModal({ song, onClose, isFavorite, onToggleFavorite, onAddToPlaylist }) {
+// Bỏ các props không dùng: isShuffled, onToggleShuffle, repeatMode...
+function SongActionModal({ 
+    song, onClose, onAddToPlaylist, isFavorite, onToggleFavorite
+}) {
   if (!song) return null;
 
   const formatNumber = (num) => {
-    // Chuyển về số nguyên để tránh lỗi nếu num là string '100'
     const n = parseInt(num, 10);
     if (!n || isNaN(n)) return 0;
-    
     if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
     if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
     return n;
@@ -22,6 +25,7 @@ function SongActionModal({ song, onClose, isFavorite, onToggleFavorite, onAddToP
             <IoClose />
         </button>
 
+        {/* Header: Thông tin bài hát */}
         <div className="song-action-header">
             <img 
                 src={song.imageUrl || 'https://placehold.co/60x60'} 
@@ -30,6 +34,9 @@ function SongActionModal({ song, onClose, isFavorite, onToggleFavorite, onAddToP
             />
             <div className="action-info">
                 <h3>{song.title}</h3>
+                {/* Có thể thêm tên nghệ sĩ ở đây nếu muốn */}
+                <p style={{fontSize: '12px', color: '#a0a0a0', margin: '0 0 5px 0'}}>{song.artists}</p>
+                
                 <div className="action-stats">
                     <span className="stat-item" title="Lượt thích">
                         <IoHeartOutline /> {formatNumber(song.likeCount)}
@@ -40,15 +47,18 @@ function SongActionModal({ song, onClose, isFavorite, onToggleFavorite, onAddToP
                 </div>
             </div>
         </div>
+        
+        {/* === ĐÃ XÓA THANH ĐIỀU KHIỂN NHẠC Ở ĐÂY === */}
 
         <div className="action-divider"></div>
 
         <div className="action-list">
-            {/* Nút Yêu thích */}
-            <div 
+             {/* Nút Yêu thích (Tùy chọn: giữ hoặc bỏ nếu muốn chỉ dùng ở PlayerControls) */}
+             <div 
                 className="action-item" 
                 onClick={() => {
                     onToggleFavorite(song.id);
+                    // onClose(); 
                 }}
             >
                 <span className="action-icon">
@@ -59,18 +69,27 @@ function SongActionModal({ song, onClose, isFavorite, onToggleFavorite, onAddToP
                 </span>
             </div>
 
-            {/* Nút Thêm vào playlist */}
+            {/* Thêm vào Playlist */}
             <div 
                 className="action-item"
-                onClick={() => {
-                    onAddToPlaylist(song); 
+                onClick={() => { onAddToPlaylist(song); onClose(); }}
+            >
+                <span className="action-icon"><IoAddCircleOutline /></span>
+                <span className="action-text">Thêm vào danh sách phát</span>
+            </div>
+            
+            <div className="action-divider-small"></div>
+
+            {/* Báo cáo */}
+            <div 
+                className="action-item"
+                onClick={() => { 
+                    alert(`Đã gửi báo cáo cho bài hát: ${song.title}`); 
                     onClose(); 
                 }}
             >
-                <span className="action-icon">
-                    <IoAddCircleOutline />
-                </span>
-                <span className="action-text">Thêm vào danh sách phát</span>
+                <span className="action-icon"><IoWarningOutline /></span>
+                <span className="action-text">Báo cáo</span>
             </div>
         </div>
       </div>
