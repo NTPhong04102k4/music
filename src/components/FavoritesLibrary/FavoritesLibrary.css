@@ -1,0 +1,147 @@
+.favorites-library {
+  padding: 30px 50px;
+  color: var(--text-primary, #fff);
+  height: 100%;
+  box-sizing: border-box;
+  overflow-y: auto;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%);
+}
+
+.favorites-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  border-bottom: 1px solid var(--player-border, #2f2739);
+  padding-bottom: 20px;
+}
+
+.favorites-header h2 {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.play-all-btn {
+  background-color: var(--player-primary-color, #9b4de0);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.favorites-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.favorite-item {
+  display: grid;
+  grid-template-columns: 50px 1fr 50px; /* STT - (Ảnh + Info) - Tim */
+  align-items: center;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.favorite-item:hover {
+  background-color: var(--sidebar-active-bg, #3a3344);
+}
+
+/* === SỬA: Style số thứ tự (Rank) === */
+.favorite-index {
+  font-size: 32px;
+  font-weight: 900;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5); /* Mặc định màu mờ */
+  font-family: "Roboto", sans-serif;
+  margin-right: 15px;
+  -webkit-text-stroke: 1px transparent;
+}
+
+/* Màu sắc cho Top 3 */
+.favorite-index.index-1 {
+  color: transparent;
+  -webkit-text-stroke: 1px #4a90e2; /* Xanh dương */
+  text-shadow: 0 0 10px rgba(74, 144, 226, 0.3);
+}
+.favorite-index.index-2 {
+  color: transparent;
+  -webkit-text-stroke: 1px #50e3c2; /* Xanh ngọc */
+}
+.favorite-index.index-3 {
+  color: transparent;
+  -webkit-text-stroke: 1px #e35050; /* Đỏ */
+}
+
+.favorite-item-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  overflow: hidden;
+}
+
+.favorite-item-cover {
+  width: 60px;
+  height: 60px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.favorite-item-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Tên bài hát */
+.favorite-item-info h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: var(--text-primary, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Tên nghệ sĩ */
+.favorite-item-info p {
+  font-size: 12px;
+  margin: 0;
+  color: var(--text-secondary, #a0a0a0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.favorite-item:hover .favorite-item-info p {
+    color: #fff; /* Sáng lên khi hover */
+}
+
+.favorite-item-right {
+  display: flex;
+  justify-content: flex-end;
+  padding-right: 10px;
+}
+.favorite-item-right svg {
+    font-size: 20px;
+}
+
+.no-favorites {
+  text-align: center;
+  color: var(--text-secondary, #a0a0a0);
+  margin-top: 50px;
+  font-style: italic;
+}

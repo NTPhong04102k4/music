@@ -165,3 +165,164 @@
     border-radius: 50%;
     object-fit: cover; /* Đảm bảo ảnh vừa vặn */
 }
+
+/* Auth Modal Styles */
+.auth-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.auth-modal {
+    background-color: #2f2739;
+    border-radius: 8px;
+    width: 400px;
+    max-width: 90vw;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.auth-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #404040;
+}
+
+.auth-modal-header h3 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #a0a0a0;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover {
+    color: #ffffff;
+}
+
+.auth-modal-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.auth-btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.login-btn {
+    background-color: #9b4de0;
+    color: #ffffff;
+}
+
+.login-btn:hover {
+    background-color: #aa63e8;
+}
+
+.register-btn {
+    background-color: #404040;
+    color: #ffffff;
+}
+
+.register-btn:hover {
+    background-color: #555555;
+}
+/* Wrapper-để-định-vị (Wrapper for positioning) */
+.search-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 440px; /* Phải-khớp (Must match) .search__container */
+}
+/* .search__container (bên-trong (inside) wrapper) */
+.search-wrapper .search__container {
+  width: 100%; /* Lấp-đầy (Fill) wrapper */
+}
+
+/* Popover-Kết-quả (Results Popover) */
+.search-results-popover {
+  position: absolute;
+  top: 120%; /* Đặt-nó (Puts it) ngay-dưới (just below) thanh-tìm-kiếm (the search bar) (với-khoảng-cách (with gap)) */
+  left: 0;
+  width: 100%;
+  background-color: var(--search-bg, #2f2739);
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 110; /* Cao-hơn (Higher than) sidebar/header */
+}
+
+/* Mục-Kết-quả (Result Item) */
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.search-result-item:hover {
+  background-color: #3d3349;
+}
+
+.search-result-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.search-result-info {
+  min-width: 0; /* Cho-phép (Allow) text-overflow */
+}
+.search-result-info h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.search-result-info p {
+  font-size: 12px;
+  color: var(--text-secondary, #a0a0a0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Không-có-kết-quả (No results) */
+.search-no-results {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-secondary, #a0a0a0);
+}
