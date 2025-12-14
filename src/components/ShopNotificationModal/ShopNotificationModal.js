@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import "./ShopNotificationModal.css";
 import { IoClose, IoStorefrontOutline } from "react-icons/io5";
+import { useTranslation } from "react-i18next";
 
 function safeParseNumber(value, fallback) {
   const n = Number(value);
@@ -11,10 +12,14 @@ export default function ShopNotificationModal({
   shopUrl,
   intervalMs = 60 * 60 * 1000, // 1h
   storageKey = "musicweb_shop_modal_last_shown",
-  title = "Thông báo",
-  message = "Ghé cửa hàng dụng cụ âm nhạc để xem ưu đãi và sản phẩm mới nhé!",
-  ctaText = "Mở cửa hàng",
+  title,
+  message,
+  ctaText,
 }) {
+  const { t } = useTranslation();
+  const resolvedTitle = title ?? t("shopModal.title");
+  const resolvedMessage = message ?? t("shopModal.message");
+  const resolvedCtaText = ctaText ?? t("shopModal.cta");
   const [open, setOpen] = useState(false);
   const timerRef = useRef(null);
 
@@ -86,12 +91,12 @@ export default function ShopNotificationModal({
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-label={resolvedTitle}
       >
         <button
           className="shop-modal-close"
           onClick={handleClose}
-          aria-label="Đóng"
+          aria-label={t("common.close")}
         >
           <IoClose />
         </button>
@@ -101,13 +106,13 @@ export default function ShopNotificationModal({
         </div>
 
         <div className="shop-modal-content">
-          <h3 className="shop-modal-title">{title}</h3>
-          <p className="shop-modal-message">{message}</p>
+          <h3 className="shop-modal-title">{resolvedTitle}</h3>
+          <p className="shop-modal-message">{resolvedMessage}</p>
         </div>
 
         <div className="shop-modal-actions">
           <button className="shop-modal-cta" onClick={handleOpenShop}>
-            {ctaText}
+            {resolvedCtaText}
           </button>
         </div>
       </div>

@@ -7,13 +7,20 @@ import {
   IoBan,
   IoDownload,
 } from "react-icons/io5";
+import { Trans, useTranslation } from "react-i18next";
 
 function VipUpgrade({ onBuy }) {
+  const { t, i18n } = useTranslation();
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentSub, setCurrentSub] = useState(null); // { packageId, packagePrice, expiryDate, ... }
   const BACKEND_URL =
     process.env.REACT_APP_BACKEND_URL || "http://localhost:5001";
+
+  const currentLang = (i18n.resolvedLanguage || i18n.language || "vi")
+    .toLowerCase()
+    .split("-")[0];
+  const dateLocale = currentLang === "en" ? "en-US" : "vi-VN";
 
   useEffect(() => {
     Promise.all([
@@ -50,13 +57,11 @@ function VipUpgrade({ onBuy }) {
   const handleDowngrade = async (pkg) => {
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("Vui lòng đăng nhập lại để tiếp tục.");
+      alert(t("vip.alerts.pleaseLoginAgain"));
       return;
     }
 
-    const ok = window.confirm(
-      "Bạn chắc chắn muốn chuyển gói? (Hạ gói/bằng giá sẽ không bị trừ tiền)"
-    );
+    const ok = window.confirm(t("vip.alerts.confirmChangePlan"));
     if (!ok) return;
 
     try {
@@ -71,14 +76,14 @@ function VipUpgrade({ onBuy }) {
 
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "Chuyển gói thất bại");
+        alert(data.error || t("vip.alerts.changePlanFailed"));
         return;
       }
 
-      alert(data.message || "Đã chuyển gói (miễn phí).");
+      alert(data.message || t("vip.alerts.changedFree"));
       await refreshSubscription();
     } catch (e) {
-      alert("Lỗi kết nối server");
+      alert(t("errors.serverConnection"));
     }
   };
 
@@ -99,9 +104,7 @@ function VipUpgrade({ onBuy }) {
       Number(pkg.price || 0) <= Number(currentSub.packagePrice || 0)
     ) {
       if (!canDowngrade) {
-        alert(
-          "Bạn chỉ được hạ gói trong 7 ngày đầu kể từ ngày đăng ký tài khoản."
-        );
+        alert(t("vip.alerts.downgradeWindowOnly"));
         return;
       }
       handleDowngrade(pkg);
@@ -118,7 +121,7 @@ function VipUpgrade({ onBuy }) {
       });
     } else {
       console.error("Lỗi: Prop 'onBuy' chưa được truyền vào VipUpgrade!");
-      alert("Chức năng mua đang lỗi. Vui lòng thử lại sau.");
+      alert(t("errors.featureTemporarilyUnavailable"));
     }
   };
 
@@ -132,7 +135,7 @@ function VipUpgrade({ onBuy }) {
           alignItems: "center",
         }}
       >
-        Loading...
+        {t("common.loading")}
       </div>
     );
   }
@@ -141,10 +144,10 @@ function VipUpgrade({ onBuy }) {
     <div className="vip-upgrade-container">
       <div className="vip-header-banner">
         <div className="vip-header-content">
-          <h1>Nâng Cấp VIP</h1>
-          <p>Nghe nhạc không giới hạn, chất lượng cao</p>
+          <h1>{t("vip.title")}</h1>
+          <p>{t("vip.subtitle")}</p>
           <div className="vip-badge">
-            <IoDiamond /> MEMBER VIP
+            <IoDiamond /> {t("vip.badge")}
           </div>
         </div>
       </div>
@@ -152,41 +155,53 @@ function VipUpgrade({ onBuy }) {
       <div className="vip-packages-section">
         {currentSub ? (
           <div className="vip-current-plan">
-            <div className="vip-current-plan-title">Gói bạn đang dùng</div>
+            <div className="vip-current-plan-title">
+              {t("vip.currentPlan.title")}
+            </div>
             <div className="vip-current-plan-row">
               <span className="vip-current-plan-name">
                 {currentSub.planName || "Premium"}
               </span>
               <span className="vip-current-plan-meta">
                 {typeof currentSub.daysLeft === "number"
-                  ? `Còn ${currentSub.daysLeft} ngày`
+                  ? t("vip.currentPlan.daysLeft", {
+                      count: currentSub.daysLeft,
+                    })
                   : ""}
                 {currentSub.expiryDate
-                  ? ` • Hết hạn: ${new Date(
-                      currentSub.expiryDate
-                    ).toLocaleDateString("vi-VN")}`
+                  ? ` • ${t("vip.currentPlan.expiry", {
+                      date: new Date(currentSub.expiryDate).toLocaleDateString(
+                        dateLocale
+                      ),
+                    })}`
                   : ""}
                 {currentSub.joinDate
-                  ? ` • Ngày tham gia: ${new Date(
-                      currentSub.joinDate
-                    ).toLocaleDateString("vi-VN")}`
+                  ? ` • ${t("vip.currentPlan.joinDate", {
+                      date: new Date(currentSub.joinDate).toLocaleDateString(
+                        dateLocale
+                      ),
+                    })}`
                   : ""}
               </span>
             </div>
             <div className="vip-current-plan-note">
               <div>
-                Chỉ có thể <b>hạ gói</b> trong <b>7 ngày</b> kể từ ngày đăng ký
-                tài khoản.
+                <Trans i18nKey="vip.currentPlan.note1">
+                  You can only <b>downgrade</b> within <b>7 days</b> from the
+                  day you registered your account.
+                </Trans>
               </div>
               <div>
-                Chỉ được hạ từ <b>gói cao</b> xuống <b>gói thấp</b>, và{" "}
-                <b>không thể hạ xuống Free</b>.
+                <Trans i18nKey="vip.currentPlan.note2">
+                  You can only downgrade from a <b>higher plan</b> to a{" "}
+                  <b>lower plan</b>, and <b>cannot downgrade to Free</b>.
+                </Trans>
               </div>
             </div>
           </div>
         ) : null}
 
-        <h2>Chọn Gói Cước Phù Hợp</h2>
+        <h2>{t("vip.choosePlan")}</h2>
         <div className="vip-packages-grid">
           {packages.map((pkg) => (
             <div
@@ -196,7 +211,7 @@ function VipUpgrade({ onBuy }) {
               }`}
             >
               {pkg.isRecommended && (
-                <div className="best-value-tag">PHỔ BIẾN NHẤT</div>
+                <div className="best-value-tag">{t("vip.bestValue")}</div>
               )}
 
               <div className="package-header">
@@ -204,7 +219,7 @@ function VipUpgrade({ onBuy }) {
                 <h3>{pkg.name.toUpperCase()}</h3>
                 <span className="package-price">{pkg.formattedPrice}</span>
                 {pkg.duration >= 180 && (
-                  <span className="package-save">Tiết kiệm hơn</span>
+                  <span className="package-save">{t("vip.saveMore")}</span>
                 )}
               </div>
 
@@ -248,14 +263,14 @@ function VipUpgrade({ onBuy }) {
                     }
                   >
                     {isCurrent
-                      ? "ĐANG SỬ DỤNG"
+                      ? t("vip.buttons.current")
                       : isDowngradeBlocked
-                      ? "KHÔNG THỂ HẠ GÓI"
+                      ? t("vip.buttons.cannotDowngrade")
                       : isFreeChange
-                      ? "HẠ GÓI (MIỄN PHÍ)"
+                      ? t("vip.buttons.downgradeFree")
                       : currentSub?.packageId
-                      ? "NÂNG GÓI (TRẢ PHÍ)"
-                      : "MUA NGAY"}
+                      ? t("vip.buttons.upgradePaid")
+                      : t("vip.buttons.buyNow")}
                   </button>
                 );
               })()}
@@ -265,28 +280,28 @@ function VipUpgrade({ onBuy }) {
       </div>
 
       <div className="vip-benefits-section">
-        <h2>Đặc Quyền VIP</h2>
+        <h2>{t("vip.benefits.title")}</h2>
         <div className="benefits-grid">
           <div className="benefit-item">
             <div className="benefit-icon" aria-hidden="true">
               <IoVolumeHigh />
             </div>
-            <h4>Chất lượng Lossless</h4>
-            <p>Thưởng thức âm nhạc chuẩn phòng thu</p>
+            <h4>{t("vip.benefits.losslessTitle")}</h4>
+            <p>{t("vip.benefits.losslessDesc")}</p>
           </div>
           <div className="benefit-item">
             <div className="benefit-icon" aria-hidden="true">
               <IoBan />
             </div>
-            <h4>Không Quảng Cáo</h4>
-            <p>Trải nghiệm nghe nhạc không bị gián đoạn</p>
+            <h4>{t("vip.benefits.noAdsTitle")}</h4>
+            <p>{t("vip.benefits.noAdsDesc")}</p>
           </div>
           <div className="benefit-item">
             <div className="benefit-icon" aria-hidden="true">
               <IoDownload />
             </div>
-            <h4>Tải Nhạc Không Giới Hạn</h4>
-            <p>Lưu trữ bài hát yêu thích để nghe offline</p>
+            <h4>{t("vip.benefits.offlineTitle")}</h4>
+            <p>{t("vip.benefits.offlineDesc")}</p>
           </div>
         </div>
       </div>

@@ -2,14 +2,18 @@ import React, { useEffect, useMemo, useState } from "react";
 import "../MainContent/MainContent.css";
 import "./ArtistDetail.css";
 import { IoChevronBack, IoPlay } from "react-icons/io5";
+import { useTranslation } from "react-i18next";
 
 function ArtistDetail({ artistId, onBack, onPlaySong }) {
+  const { t } = useTranslation();
   const [artist, setArtist] = useState(null);
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const artistIdNormalized = useMemo(() => Number(artistId), [artistId]);
+  const BACKEND_URL =
+    process.env.REACT_APP_BACKEND_URL || "http://localhost:5001";
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -17,13 +21,16 @@ function ArtistDetail({ artistId, onBack, onPlaySong }) {
       setLoading(true);
       try {
         const res = await fetch(
-          `http://localhost:5001/api/artists/${artistIdNormalized}`
+          `${BACKEND_URL}/api/artists/${artistIdNormalized}`
         );
         const data = await res.json();
         if (!res.ok) {
           setArtist(null);
           setSongs([]);
-          setError(data?.error || `Lỗi tải nghệ sĩ (HTTP ${res.status})`);
+          setError(
+            data?.error ||
+              t("artistDetail.errors.fetchFailed", { status: res.status })
+          );
           return;
         }
 
@@ -32,7 +39,7 @@ function ArtistDetail({ artistId, onBack, onPlaySong }) {
       } catch (e) {
         setArtist(null);
         setSongs([]);
-        setError("Lỗi kết nối server");
+        setError(t("errors.serverConnection"));
       } finally {
         setLoading(false);
       }
@@ -42,12 +49,13 @@ function ArtistDetail({ artistId, onBack, onPlaySong }) {
     else {
       setArtist(null);
       setSongs([]);
-      setError("artistId không hợp lệ");
+      setError(t("artistDetail.errors.invalidArtistId"));
       setLoading(false);
     }
-  }, [artistIdNormalized]);
+  }, [artistIdNormalized, BACKEND_URL, t]);
 
-  if (loading) return <div style={{ padding: 20 }}>Đang tải nghệ sĩ...</div>;
+  if (loading)
+    return <div style={{ padding: 20 }}>{t("artistDetail.loadingArtist")}</div>;
 
   return (
     <div className="main-content artist-detail">
@@ -55,9 +63,9 @@ function ArtistDetail({ artistId, onBack, onPlaySong }) {
         <div className="section-header artist-detail-header">
           <div className="artist-detail-title">
             <button className="artist-back-btn" onClick={onBack} type="button">
-              <IoChevronBack /> Quay lại
+              <IoChevronBack /> {t("common.back")}
             </button>
-            <h2>Chi Tiết Nghệ Sĩ</h2>
+            <h2>{t("artistDetail.title")}</h2>
           </div>
         </div>
 
@@ -83,7 +91,9 @@ function ArtistDetail({ artistId, onBack, onPlaySong }) {
               {artist.bio ? (
                 <div className="artist-hero-bio">{artist.bio}</div>
               ) : (
-                <div className="artist-hero-bio empty">Chưa có tiểu sử.</div>
+                <div className="artist-hero-bio empty">
+                  {t("artistDetail.emptyBio")}
+                </div>
               )}
               <div className="artist-hero-actions">
                 <button
@@ -92,7 +102,7 @@ function ArtistDetail({ artistId, onBack, onPlaySong }) {
                   disabled={!songs.length}
                   onClick={() => songs.length && onPlaySong(songs[0], songs)}
                 >
-                  <IoPlay /> Phát tất cả
+                  <IoPlay /> {t("artistDetail.playAll")}
                 </button>
               </div>
             </div>
@@ -101,12 +111,14 @@ function ArtistDetail({ artistId, onBack, onPlaySong }) {
 
         <div className="artist-songs">
           <div className="artist-songs-title">
-            <h3>Bài hát</h3>
+            <h3>{t("artistDetail.songsTitle")}</h3>
             <span className="artist-songs-count">{songs.length}</span>
           </div>
 
           {songs.length === 0 ? (
-            <div className="artist-empty-songs">Chưa có bài hát.</div>
+            <div className="artist-empty-songs">
+              {t("artistDetail.emptySongs")}
+            </div>
           ) : (
             <div className="song-list-grid three-columns">
               {songs.map((s) => (
@@ -148,5 +160,3 @@ function ArtistDetail({ artistId, onBack, onPlaySong }) {
 }
 
 export default ArtistDetail;
-
-

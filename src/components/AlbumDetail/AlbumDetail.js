@@ -8,22 +8,25 @@ import {
 } from "react-icons/io5";
 import "./AlbumDetail.css";
 import { emitSongStatsChanged } from "../../utils/songEvents";
+import { useTranslation } from "react-i18next";
 
 function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
+  const { t } = useTranslation();
   const [albumData, setAlbumData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [likedSongIds, setLikedSongIds] = useState(() => new Set());
 
+  const BACKEND_URL =
+    process.env.REACT_APP_BACKEND_URL || "http://localhost:5001";
+
   const fetchAlbumDetails = useCallback(
     async ({ silent = false } = {}) => {
       try {
         if (!silent) setLoading(true);
-        const response = await fetch(
-          `http://localhost:5001/api/album/${albumId}`
-        );
+        const response = await fetch(`${BACKEND_URL}/api/album/${albumId}`);
         if (!response.ok) {
-          throw new Error("Failed to fetch album details");
+          throw new Error(t("albumDetail.errors.fetchFailed"));
         }
         const data = await response.json();
         setAlbumData(data);
@@ -33,7 +36,7 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
         if (token && Array.isArray(data?.songs) && data.songs.length > 0) {
           const songIds = data.songs.map((s) => s.id);
           const statusRes = await fetch(
-            "http://localhost:5001/api/songs/like-status",
+            `${BACKEND_URL}/api/songs/like-status`,
             {
               method: "POST",
               headers: {
@@ -54,7 +57,7 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
         if (!silent) setLoading(false);
       }
     },
-    [albumId]
+    [albumId, BACKEND_URL, t]
   );
 
   useEffect(() => {
@@ -63,7 +66,7 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
   }, [albumId, fetchAlbumDetails]);
 
   const handlePlayAlbum = () => {
-    if (albumData && albumData.songs.length > 0) {
+    if (albumData?.songs?.length > 0) {
       onPlaySong(albumData.songs[0], albumData.songs);
     }
   };
@@ -76,14 +79,14 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("Vui lòng đăng nhập để sử dụng tính năng Like");
+        alert(t("albumDetail.alerts.loginToLike"));
         return;
       }
       const isLiked = likedSongIds.has(songId);
       const endpoint = isLiked ? "unlike" : "like";
 
       const response = await fetch(
-        `http://localhost:5001/api/songs/${songId}/${endpoint}`,
+        `${BACKEND_URL}/api/songs/${songId}/${endpoint}`,
         {
           method: "POST",
           headers: {
@@ -94,7 +97,7 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data?.error || "Lỗi khi like bài hát");
+        throw new Error(data?.error || t("albumDetail.errors.likeFailed"));
       }
 
       setLikedSongIds((prev) => {
@@ -110,14 +113,14 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
       // Global notify để các màn khác gọi GET lại (đồng bộ toàn dự án)
       emitSongStatsChanged({ songId, likeCount: data?.likeCount });
     } catch (err) {
-      alert(err.message || "Lỗi khi like bài hát");
+      alert(err.message || t("albumDetail.errors.likeFailed"));
     }
   };
 
   if (loading) {
     return (
       <div className="album-detail">
-        <div className="loading">Đang tải...</div>
+        <div className="loading">{t("common.loading")}</div>
       </div>
     );
   }
@@ -125,9 +128,11 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
   if (error) {
     return (
       <div className="album-detail">
-        <div className="error">Lỗi: {error}</div>
+        <div className="error">
+          {t("albumDetail.errorLabel")}: {error}
+        </div>
         <button onClick={onBack} className="back-btn">
-          Quay lại
+          {t("common.back")}
         </button>
       </div>
     );
@@ -136,9 +141,9 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
   if (!albumData) {
     return (
       <div className="album-detail">
-        <div className="error">Không tìm thấy album</div>
+        <div className="error">{t("albumDetail.notFound")}</div>
         <button onClick={onBack} className="back-btn">
-          Quay lại
+          {t("common.back")}
         </button>
       </div>
     );
@@ -167,14 +172,14 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
             <h1>{album.title}</h1>
             <p className="album-artists">{album.artists}</p>
             <p className="album-meta">
-              {songs.length} bài hát •{" "}
+              {t("albumDetail.songsCount", { count: songs.length })} •{" "}
               {album.releaseDate
                 ? new Date(album.releaseDate).getFullYear()
-                : "N/A"}
+                : t("common.notAvailable")}
             </p>
             <button className="play-album-btn" onClick={handlePlayAlbum}>
               <IoPlay />
-              Phát album
+              {t("albumDetail.playAlbum")}
             </button>
           </div>
         </div>
@@ -182,7 +187,7 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
 
       {/* Songs List */}
       <div className="songs-list">
-        <h2>Danh sách bài hát</h2>
+        <h2>{t("albumDetail.songsListTitle")}</h2>
         <div className="songs-container">
           {songs.map((song, index) => (
             <div key={song.id} className="song-item">
@@ -206,7 +211,7 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
                   return (
                     <button
                       className={`action-btn ${isLiked ? "liked" : ""}`}
-                      title="Like (tăng lượt thích)"
+                      title={t("albumDetail.tooltips.like")}
                       onClick={() => handleToggleLikeSong(song.id)}
                     >
                       {isLiked ? (
@@ -219,7 +224,7 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
                 })()}
                 <button
                   className="action-btn"
-                  title="Tùy chọn"
+                  title={t("albumDetail.tooltips.options")}
                   onClick={() => onOpenSongAction && onOpenSongAction(song)}
                 >
                   <IoEllipsisHorizontal />

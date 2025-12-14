@@ -1,12 +1,14 @@
 import React, { useMemo, useState } from "react";
 import "./ChangePasswordModal.css";
 import { IoClose, IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
+import { useTranslation } from "react-i18next";
 
 function ChangePasswordModal({ onClose, onSuccess }) {
   const BACKEND_URL = useMemo(
     () => process.env.REACT_APP_BACKEND_URL || "http://localhost:5001",
     []
   );
+  const { t } = useTranslation();
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -18,13 +20,13 @@ function ChangePasswordModal({ onClose, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      alert("Xác nhận mật khẩu không khớp");
+      alert(t("changePassword.alerts.confirmMismatch"));
       return;
     }
 
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("Vui lòng đăng nhập");
+      alert(t("changePassword.alerts.pleaseLogin"));
       return;
     }
 
@@ -41,15 +43,15 @@ function ChangePasswordModal({ onClose, onSuccess }) {
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert(data.error || "Đổi mật khẩu thất bại");
+        alert(data.error || t("changePassword.alerts.failed"));
         return;
       }
 
-      alert("Đổi mật khẩu thành công");
+      alert(t("changePassword.alerts.success"));
       onSuccess?.();
       onClose?.();
     } catch (err) {
-      alert("Lỗi kết nối server");
+      alert(t("errors.serverConnection"));
     } finally {
       setLoading(false);
     }
@@ -62,11 +64,11 @@ function ChangePasswordModal({ onClose, onSuccess }) {
           <IoClose />
         </button>
 
-        <h2 className="cpm-title">Đổi mật khẩu</h2>
+        <h2 className="cpm-title">{t("changePassword.title")}</h2>
 
         <form onSubmit={handleSubmit} className="cpm-form">
           <div className="cpm-field">
-            <label>Mật khẩu hiện tại</label>
+            <label>{t("changePassword.currentPassword")}</label>
             <div className="cpm-input-row">
               <input
                 type={showCurrent ? "text" : "password"}
@@ -85,7 +87,7 @@ function ChangePasswordModal({ onClose, onSuccess }) {
           </div>
 
           <div className="cpm-field">
-            <label>Mật khẩu mới</label>
+            <label>{t("changePassword.newPassword")}</label>
             <div className="cpm-input-row">
               <input
                 type={showNew ? "text" : "password"}
@@ -104,7 +106,7 @@ function ChangePasswordModal({ onClose, onSuccess }) {
           </div>
 
           <div className="cpm-field">
-            <label>Xác nhận mật khẩu mới</label>
+            <label>{t("changePassword.confirmNewPassword")}</label>
             <input
               type="password"
               value={confirmPassword}
@@ -114,7 +116,9 @@ function ChangePasswordModal({ onClose, onSuccess }) {
           </div>
 
           <button className="cpm-submit" type="submit" disabled={loading}>
-            {loading ? "Đang đổi..." : "Đổi mật khẩu"}
+            {loading
+              ? t("changePassword.submitting")
+              : t("changePassword.submit")}
           </button>
         </form>
       </div>

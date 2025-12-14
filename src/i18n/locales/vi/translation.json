@@ -23,7 +23,147 @@
   "language": {
     "english": "English",
     "vietnamese": "Tiếng Việt"
+  },
+  "common": {
+    "or": "hoặc",
+    "close": "Đóng",
+    "loading": "Đang tải...",
+    "back": "Quay lại",
+    "notAvailable": "N/A"
+  },
+  "errors": {
+    "serverConnection": "Không thể kết nối đến server. Vui lòng thử lại.",
+    "featureTemporarilyUnavailable": "Chức năng đang gặp lỗi. Vui lòng thử lại sau."
+  },
+  "auth": {
+    "titleLogin": "Đăng Nhập",
+    "titleRegister": "Đăng Ký Tài Khoản",
+    "emailOrUsernamePlaceholder": "Nhập email hoặc tên đăng nhập",
+    "passwordPlaceholder": "Nhập mật khẩu",
+    "rememberMe": "Nhớ tôi",
+    "forgotPassword": "Quên mật khẩu?",
+    "register": {
+      "usernamePlaceholder": "Tên đăng nhập (Username)",
+      "fullNamePlaceholder": "Tên hiển thị (Họ và Tên)",
+      "emailPlaceholder": "Email",
+      "passwordPlaceholder": "Mật khẩu",
+      "confirmPasswordPlaceholder": "Nhập lại mật khẩu",
+      "agreeTerms": "Tôi đồng ý với các điều khoản"
+    },
+    "submitLogin": "Đăng Nhập",
+    "submitRegister": "Đăng Ký",
+    "switchToLogin": "Đăng nhập ngay",
+    "switchToRegister": "Đăng ký ngay",
+    "haveAccount": "Bạn đã có tài khoản?",
+    "noAccount": "Bạn chưa có tài khoản?",
+    "alerts": {
+      "loginFailed": "Đăng nhập thất bại",
+      "registerFailed": "Đăng ký thất bại",
+      "registerSuccess": "Đăng ký thành công! Vui lòng đăng nhập.",
+      "passwordConfirmMismatch": "Mật khẩu xác nhận không khớp!",
+      "mustAgreeTerms": "Bạn phải đồng ý với các điều khoản."
+    }
+  },
+  "changePassword": {
+    "title": "Đổi mật khẩu",
+    "currentPassword": "Mật khẩu hiện tại",
+    "newPassword": "Mật khẩu mới",
+    "confirmNewPassword": "Xác nhận mật khẩu mới",
+    "submitting": "Đang đổi...",
+    "submit": "Đổi mật khẩu",
+    "alerts": {
+      "confirmMismatch": "Xác nhận mật khẩu không khớp",
+      "pleaseLogin": "Vui lòng đăng nhập",
+      "failed": "Đổi mật khẩu thất bại",
+      "success": "Đổi mật khẩu thành công"
+    }
+  },
+  "shopModal": {
+    "title": "Thông báo",
+    "message": "Ghé cửa hàng dụng cụ âm nhạc để xem ưu đãi và sản phẩm mới nhé!",
+    "cta": "Mở cửa hàng"
+  },
+  "vip": {
+    "title": "Nâng Cấp VIP",
+    "subtitle": "Nghe nhạc không giới hạn, chất lượng cao",
+    "badge": "MEMBER VIP",
+    "currentPlan": {
+      "title": "Gói bạn đang dùng",
+      "daysLeft_one": "Còn {{count}} ngày",
+      "daysLeft_other": "Còn {{count}} ngày",
+      "expiry": "Hết hạn: {{date}}",
+      "joinDate": "Ngày tham gia: {{date}}",
+      "note1": "Chỉ có thể <1>hạ gói</1> trong <3>7 ngày</3> kể từ ngày đăng ký tài khoản.",
+      "note2": "Chỉ được hạ từ <1>gói cao</1> xuống <3>gói thấp</3>, và <5>không thể hạ xuống Free</5>."
+    },
+    "choosePlan": "Chọn Gói Cước Phù Hợp",
+    "bestValue": "PHỔ BIẾN NHẤT",
+    "saveMore": "Tiết kiệm hơn",
+    "buttons": {
+      "current": "ĐANG SỬ DỤNG",
+      "cannotDowngrade": "KHÔNG THỂ HẠ GÓI",
+      "downgradeFree": "HẠ GÓI (MIỄN PHÍ)",
+      "upgradePaid": "NÂNG GÓI (TRẢ PHÍ)",
+      "buyNow": "MUA NGAY"
+    },
+    "benefits": {
+      "title": "Đặc Quyền VIP",
+      "losslessTitle": "Chất lượng Lossless",
+      "losslessDesc": "Thưởng thức âm nhạc chuẩn phòng thu",
+      "noAdsTitle": "Không Quảng Cáo",
+      "noAdsDesc": "Trải nghiệm nghe nhạc không bị gián đoạn",
+      "offlineTitle": "Tải Nhạc Không Giới Hạn",
+      "offlineDesc": "Lưu trữ bài hát yêu thích để nghe offline"
+    },
+    "alerts": {
+      "pleaseLoginAgain": "Vui lòng đăng nhập lại để tiếp tục.",
+      "confirmChangePlan": "Bạn chắc chắn muốn chuyển gói? (Hạ gói/bằng giá sẽ không bị trừ tiền)",
+      "changePlanFailed": "Chuyển gói thất bại",
+      "changedFree": "Đã chuyển gói (miễn phí).",
+      "downgradeWindowOnly": "Bạn chỉ được hạ gói trong 7 ngày đầu kể từ ngày đăng ký tài khoản."
+    }
+  },
+  "playlist": {
+    "addToPlaylist": {
+      "title": "Thêm vào Playlist",
+      "chooseToAdd": "Chọn playlist để thêm bài hát:",
+      "empty": "Bạn chưa có playlist nào."
+    }
+  },
+  "albumDetail": {
+    "errorLabel": "Lỗi",
+    "notFound": "Không tìm thấy album",
+    "playAlbum": "Phát album",
+    "songsListTitle": "Danh sách bài hát",
+    "songsCount_one": "{{count}} bài hát",
+    "songsCount_other": "{{count}} bài hát",
+    "tooltips": {
+      "like": "Like (tăng lượt thích)",
+      "options": "Tùy chọn"
+    },
+    "alerts": {
+      "loginToLike": "Vui lòng đăng nhập để sử dụng tính năng Like"
+    },
+    "errors": {
+      "fetchFailed": "Không thể tải chi tiết album.",
+      "likeFailed": "Lỗi khi like bài hát"
+    }
+  },
+  "albumLibrary": {
+    "title": "Thư Viện Album",
+    "empty": "Chưa có album nào.",
+    "playAlbum": "Phát album"
+  },
+  "artistDetail": {
+    "title": "Chi Tiết Nghệ Sĩ",
+    "loadingArtist": "Đang tải nghệ sĩ...",
+    "emptyBio": "Chưa có tiểu sử.",
+    "playAll": "Phát tất cả",
+    "songsTitle": "Bài hát",
+    "emptySongs": "Chưa có bài hát.",
+    "errors": {
+      "fetchFailed": "Lỗi tải nghệ sĩ (HTTP {{status}})",
+      "invalidArtistId": "artistId không hợp lệ"
+    }
   }
 }
-
-

@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import "./Login.css"; // Đảm bảo bạn dùng đúng file CSS (Login.css hoặc AuthModal.css)
 import { IoClose, IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
 import { FaFacebookF, FaGoogle } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 
 function Login({ onClose, onLoginSuccess }) {
   const BACKEND_URL =
     process.env.REACT_APP_BACKEND_URL || "http://localhost:5001";
+  const { t } = useTranslation();
   // State quản lý chế độ: false = Đăng nhập, true = Đăng ký
   const [isRegisterMode, setIsRegisterMode] = useState(false);
 
@@ -50,20 +52,20 @@ function Login({ onClose, onLoginSuccess }) {
         if (onLoginSuccess) onLoginSuccess(data.user);
         else onClose();
       } else {
-        alert(data.error || "Đăng nhập thất bại");
+        alert(data.error || t("auth.alerts.loginFailed"));
       }
     } catch (error) {
-      alert("Lỗi kết nối server");
+      alert(t("errors.serverConnection"));
     }
   };
 
   const handleRegister = async () => {
     if (password !== confirmPassword) {
-      alert("Mật khẩu xác nhận không khớp!");
+      alert(t("auth.alerts.passwordConfirmMismatch"));
       return;
     }
     if (!agreeTerms) {
-      alert("Bạn phải đồng ý với các điều khoản.");
+      alert(t("auth.alerts.mustAgreeTerms"));
       return;
     }
 
@@ -82,14 +84,14 @@ function Login({ onClose, onLoginSuccess }) {
       const data = await response.json();
 
       if (response.ok) {
-        alert("Đăng ký thành công! Vui lòng đăng nhập.");
+        alert(t("auth.alerts.registerSuccess"));
         setIsRegisterMode(false); // Chuyển về trang đăng nhập
         resetForm();
       } else {
-        alert(data.error || "Đăng ký thất bại");
+        alert(data.error || t("auth.alerts.registerFailed"));
       }
     } catch (error) {
-      alert("Lỗi kết nối server");
+      alert(t("errors.serverConnection"));
     }
   };
 
@@ -117,7 +119,9 @@ function Login({ onClose, onLoginSuccess }) {
           <IoClose />
         </button>
 
-        <h2>{isRegisterMode ? "Đăng Ký Tài Khoản" : "Đăng Nhập"}</h2>
+        <h2>
+          {isRegisterMode ? t("auth.titleRegister") : t("auth.titleLogin")}
+        </h2>
 
         <form onSubmit={handleSubmit}>
           {/* === FORM ĐĂNG NHẬP === */}
@@ -126,7 +130,7 @@ function Login({ onClose, onLoginSuccess }) {
               <div className="auth-input-group">
                 <input
                   type="text"
-                  placeholder="Nhập email hoặc tên đăng nhập"
+                  placeholder={t("auth.emailOrUsernamePlaceholder")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -135,7 +139,7 @@ function Login({ onClose, onLoginSuccess }) {
               <div className="auth-input-group password-group">
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Nhập mật khẩu"
+                  placeholder={t("auth.passwordPlaceholder")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -152,10 +156,10 @@ function Login({ onClose, onLoginSuccess }) {
                 <label className="auth-checkbox-container">
                   <input type="checkbox" />
                   <span className="auth-checkmark"></span>
-                  Nhớ tôi
+                  {t("auth.rememberMe")}
                 </label>
                 <button type="button" className="forgot-password">
-                  Quên mật khẩu?
+                  {t("auth.forgotPassword")}
                 </button>
               </div>
             </>
@@ -167,7 +171,7 @@ function Login({ onClose, onLoginSuccess }) {
               <div className="auth-input-group">
                 <input
                   type="text"
-                  placeholder="Tên đăng nhập (Username)"
+                  placeholder={t("auth.register.usernamePlaceholder")}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
@@ -176,7 +180,7 @@ function Login({ onClose, onLoginSuccess }) {
               <div className="auth-input-group">
                 <input
                   type="text"
-                  placeholder="Tên hiển thị (Họ và Tên)"
+                  placeholder={t("auth.register.fullNamePlaceholder")}
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
@@ -185,7 +189,7 @@ function Login({ onClose, onLoginSuccess }) {
               <div className="auth-input-group">
                 <input
                   type="email"
-                  placeholder="Email"
+                  placeholder={t("auth.register.emailPlaceholder")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -194,7 +198,7 @@ function Login({ onClose, onLoginSuccess }) {
               <div className="auth-input-group password-group">
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Mật khẩu"
+                  placeholder={t("auth.register.passwordPlaceholder")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -203,7 +207,7 @@ function Login({ onClose, onLoginSuccess }) {
               <div className="auth-input-group password-group">
                 <input
                   type="password"
-                  placeholder="Nhập lại mật khẩu"
+                  placeholder={t("auth.register.confirmPasswordPlaceholder")}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -218,7 +222,7 @@ function Login({ onClose, onLoginSuccess }) {
                     onChange={(e) => setAgreeTerms(e.target.checked)}
                   />
                   <span className="auth-checkmark"></span>
-                  Tôi đồng ý với các điều khoản
+                  {t("auth.register.agreeTerms")}
                 </label>
               </div>
             </>
@@ -226,12 +230,12 @@ function Login({ onClose, onLoginSuccess }) {
 
           {/* Nút Submit */}
           <button type="submit" className="auth-submit-btn">
-            {isRegisterMode ? "Đăng Ký" : "Đăng Nhập"}
+            {isRegisterMode ? t("auth.submitRegister") : t("auth.submitLogin")}
           </button>
         </form>
 
         <div className="auth-divider">
-          <span>hoặc</span>
+          <span>{t("common.or")}</span>
         </div>
 
         {/* Social Login chỉ hiện khi Đăng nhập cho gọn */}
@@ -258,13 +262,13 @@ function Login({ onClose, onLoginSuccess }) {
         <div className="auth-footer-switch">
           {isRegisterMode ? (
             <p>
-              Bạn đã có tài khoản?{" "}
-              <span onClick={toggleMode}>Đăng nhập ngay</span>
+              {t("auth.haveAccount")}{" "}
+              <span onClick={toggleMode}>{t("auth.switchToLogin")}</span>
             </p>
           ) : (
             <p>
-              Bạn chưa có tài khoản?{" "}
-              <span onClick={toggleMode}>Đăng ký ngay</span>
+              {t("auth.noAccount")}{" "}
+              <span onClick={toggleMode}>{t("auth.switchToRegister")}</span>
             </p>
           )}
         </div>

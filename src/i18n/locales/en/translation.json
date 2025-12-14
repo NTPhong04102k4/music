@@ -23,7 +23,147 @@
   "language": {
     "english": "English",
     "vietnamese": "Vietnamese"
+  },
+  "common": {
+    "or": "or",
+    "close": "Close",
+    "loading": "Loading...",
+    "back": "Back",
+    "notAvailable": "N/A"
+  },
+  "errors": {
+    "serverConnection": "Cannot connect to server. Please try again.",
+    "featureTemporarilyUnavailable": "This feature is currently unavailable. Please try again later."
+  },
+  "auth": {
+    "titleLogin": "Log in",
+    "titleRegister": "Create an account",
+    "emailOrUsernamePlaceholder": "Email or username",
+    "passwordPlaceholder": "Password",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?",
+    "register": {
+      "usernamePlaceholder": "Username",
+      "fullNamePlaceholder": "Display name (Full name)",
+      "emailPlaceholder": "Email",
+      "passwordPlaceholder": "Password",
+      "confirmPasswordPlaceholder": "Confirm password",
+      "agreeTerms": "I agree to the terms"
+    },
+    "submitLogin": "Log in",
+    "submitRegister": "Sign up",
+    "switchToLogin": "Log in now",
+    "switchToRegister": "Sign up now",
+    "haveAccount": "Already have an account?",
+    "noAccount": "Don't have an account?",
+    "alerts": {
+      "loginFailed": "Login failed",
+      "registerFailed": "Sign up failed",
+      "registerSuccess": "Sign up successful! Please log in.",
+      "passwordConfirmMismatch": "Password confirmation does not match.",
+      "mustAgreeTerms": "You must agree to the terms."
+    }
+  },
+  "changePassword": {
+    "title": "Change password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmNewPassword": "Confirm new password",
+    "submitting": "Changing...",
+    "submit": "Change password",
+    "alerts": {
+      "confirmMismatch": "Password confirmation does not match.",
+      "pleaseLogin": "Please log in.",
+      "failed": "Change password failed.",
+      "success": "Password changed successfully."
+    }
+  },
+  "shopModal": {
+    "title": "Notice",
+    "message": "Visit the music instruments shop to see deals and new products!",
+    "cta": "Open shop"
+  },
+  "vip": {
+    "title": "Upgrade VIP",
+    "subtitle": "Unlimited high-quality music streaming",
+    "badge": "VIP MEMBER",
+    "currentPlan": {
+      "title": "Your current plan",
+      "daysLeft_one": "{{count}} day left",
+      "daysLeft_other": "{{count}} days left",
+      "expiry": "Expires: {{date}}",
+      "joinDate": "Joined: {{date}}",
+      "note1": "You can only <1>downgrade</1> within <3>7 days</3> from the day you registered your account.",
+      "note2": "You can only downgrade from a <1>higher plan</1> to a <3>lower plan</3>, and <5>cannot downgrade to Free</5>."
+    },
+    "choosePlan": "Choose a plan that fits you",
+    "bestValue": "MOST POPULAR",
+    "saveMore": "Save more",
+    "buttons": {
+      "current": "CURRENT PLAN",
+      "cannotDowngrade": "DOWNGRADE NOT AVAILABLE",
+      "downgradeFree": "DOWNGRADE (FREE)",
+      "upgradePaid": "UPGRADE (PAID)",
+      "buyNow": "BUY NOW"
+    },
+    "benefits": {
+      "title": "VIP Benefits",
+      "losslessTitle": "Lossless quality",
+      "losslessDesc": "Enjoy studio-quality music",
+      "noAdsTitle": "No ads",
+      "noAdsDesc": "Uninterrupted listening experience",
+      "offlineTitle": "Unlimited downloads",
+      "offlineDesc": "Save your favorites to listen offline"
+    },
+    "alerts": {
+      "pleaseLoginAgain": "Please log in again to continue.",
+      "confirmChangePlan": "Are you sure you want to change plan? (Downgrading/same price won't charge you)",
+      "changePlanFailed": "Change plan failed.",
+      "changedFree": "Plan changed (free).",
+      "downgradeWindowOnly": "You can only downgrade within the first 7 days after account registration."
+    }
+  },
+  "playlist": {
+    "addToPlaylist": {
+      "title": "Add to playlist",
+      "chooseToAdd": "Choose a playlist to add the song:",
+      "empty": "You don't have any playlists yet."
+    }
+  },
+  "albumDetail": {
+    "errorLabel": "Error",
+    "notFound": "Album not found",
+    "playAlbum": "Play album",
+    "songsListTitle": "Song list",
+    "songsCount_one": "{{count}} song",
+    "songsCount_other": "{{count}} songs",
+    "tooltips": {
+      "like": "Like",
+      "options": "Options"
+    },
+    "alerts": {
+      "loginToLike": "Please log in to use Like."
+    },
+    "errors": {
+      "fetchFailed": "Failed to fetch album details.",
+      "likeFailed": "Failed to like the song."
+    }
+  },
+  "albumLibrary": {
+    "title": "Album library",
+    "empty": "No albums yet.",
+    "playAlbum": "Play album"
+  },
+  "artistDetail": {
+    "title": "Artist details",
+    "loadingArtist": "Loading artist...",
+    "emptyBio": "No bio yet.",
+    "playAll": "Play all",
+    "songsTitle": "Songs",
+    "emptySongs": "No songs yet.",
+    "errors": {
+      "fetchFailed": "Failed to load artist (HTTP {{status}}).",
+      "invalidArtistId": "Invalid artistId."
+    }
   }
 }
-
-
