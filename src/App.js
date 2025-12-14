@@ -33,6 +33,8 @@ import ChartLibrary from "./components/ChartLibrary/ChartLibrary";
 import SongDetailPage from "./components/SongDetailPage/SongDetailPage";
 import ArtistLibrary from "./components/ArtistLibrary/ArtistLibrary";
 import ArtistDetail from "./components/ArtistDetail/ArtistDetail";
+import GenreLibrary from "./components/GenreLibrary/GenreLibrary";
+import GenreDetail from "./components/GenreDetail/GenreDetail";
 
 function App() {
   // --- TRẠNG THÁI (STATE) ---
@@ -389,6 +391,16 @@ function App() {
     setCurrentView("artist-detail");
   }, []);
 
+  const handleViewGenres = useCallback(() => {
+    setCurrentView("genres");
+    setSelectedItemId(null);
+  }, []);
+
+  const handleViewGenreDetail = useCallback((genreId) => {
+    setSelectedItemId(genreId);
+    setCurrentView("genre-detail");
+  }, []);
+
   const handleBackToMain = useCallback(() => {
     setCurrentView("main");
     setSelectedItemId(null);
@@ -644,6 +656,8 @@ function App() {
             onViewCharts={handleViewCharts}
             onViewArtists={handleViewArtists}
             onViewArtist={handleViewArtistDetail}
+            onViewGenres={handleViewGenres}
+            onViewGenre={handleViewGenreDetail}
             isLoggedIn={isLoggedIn}
             favorites={favorites} // Truyền xuống nếu cần dùng để hiển thị trạng thái
             // onToggleFavorite đã chuyển xuống PlayerControls nên có thể không cần ở đây nữa
@@ -683,6 +697,21 @@ function App() {
           <ArtistDetail
             artistId={selectedItemId}
             onBack={handleViewArtists}
+            onPlaySong={handlePlaySong}
+          />
+        )}
+
+        {currentView === "genres" && (
+          <GenreLibrary
+            onBack={handleViewHome}
+            onViewGenre={handleViewGenreDetail}
+          />
+        )}
+
+        {currentView === "genre-detail" && selectedItemId && (
+          <GenreDetail
+            genreId={selectedItemId}
+            onBack={handleViewGenres}
             onPlaySong={handlePlaySong}
           />
         )}

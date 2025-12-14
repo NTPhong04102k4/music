@@ -16,6 +16,8 @@ function MainContent({
   onViewCharts,
   onViewArtists,
   onViewArtist,
+  onViewGenres,
+  onViewGenre,
   isLoggedIn,
   favorites,
   onToggleFavorite,
@@ -24,6 +26,7 @@ function MainContent({
   const [chartData, setChartData] = useState([]);
   const [partners, setPartners] = useState([]);
   const [artistsPreview, setArtistsPreview] = useState([]);
+  const [genresPreview, setGenresPreview] = useState([]);
   const [chartCategory, setChartCategory] = useState("all"); // all | vn | foreign
 
   // --- FETCH DATA ---
@@ -61,11 +64,25 @@ function MainContent({
       });
   };
 
+  const fetchGenresPreview = () => {
+    fetch("http://localhost:5001/api/genres?page=1&limit=5")
+      .then((response) => response.json())
+      .then((data) => {
+        const list = Array.isArray(data?.data) ? data.data : [];
+        setGenresPreview(list);
+      })
+      .catch((error) => {
+        console.error("Error fetching genres:", error);
+        setGenresPreview([]);
+      });
+  };
+
   useEffect(() => {
     fetchSuggestions();
     fetchChartData();
     fetchPartners();
     fetchArtistsPreview();
+    fetchGenresPreview();
   }, []);
 
   // Global refresh: sau khi like/unlike ở bất kỳ đâu, gọi GET lại để đồng bộ UI toàn dự án
@@ -287,6 +304,44 @@ function MainContent({
             type="button"
             className="artist-preview-card artist-preview-viewall"
             onClick={() => onViewArtists && onViewArtists()}
+            title="View All"
+          >
+            <div className="artist-preview-plus">
+              <IoAdd />
+            </div>
+            <div className="artist-preview-viewall-text">View All</div>
+          </button>
+        </div>
+      </section>
+
+      {/* === THỂ LOẠI === */}
+      <section className="content-section">
+        <div className="section-header">
+          <h2>Thể Loại</h2>
+        </div>
+
+        <div className="genre-preview-grid">
+          {genresPreview.map((g) => (
+            <button
+              key={g.id}
+              type="button"
+              className="genre-preview-card"
+              onClick={() => onViewGenre && onViewGenre(g.id)}
+              title={g.name}
+            >
+              <div className="genre-preview-name">{g.name}</div>
+              {g.songCount != null ? (
+                <div className="genre-preview-count">
+                  {Number(g.songCount || 0)} bài
+                </div>
+              ) : null}
+            </button>
+          ))}
+
+          <button
+            type="button"
+            className="genre-preview-card genre-preview-viewall"
+            onClick={() => onViewGenres && onViewGenres()}
             title="View All"
           >
             <div className="artist-preview-plus">

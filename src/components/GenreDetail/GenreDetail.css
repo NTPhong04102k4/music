@@ -1,0 +1,120 @@
+.genre-detail {
+  padding: 30px 50px;
+  color: var(--text-primary, #fff);
+  height: 100%;
+  box-sizing: border-box;
+  overflow-y: auto;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 100%);
+}
+
+.genre-detail-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.genre-hero {
+  padding: 14px;
+  border: 1px solid var(--section-border, #2f2739);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  margin-bottom: 18px;
+}
+
+.genre-hero-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.genre-hero-name {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.genre-hero-desc {
+  color: var(--text-secondary, #a0a0a0);
+  font-size: 14px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.genre-hero-desc.empty {
+  font-style: italic;
+}
+
+.genre-hero-stats {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.genre-hero-count {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.genre-hero-count-label {
+  font-size: 12px;
+  color: var(--text-secondary, #a0a0a0);
+}
+
+.genre-hero-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.genre-play-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(155, 77, 224, 0.45);
+  background: rgba(155, 77, 224, 0.14);
+  color: var(--text-primary, #fff);
+  cursor: pointer;
+}
+
+.genre-play-all:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.genre-songs-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 12px;
+}
+
+.genre-songs-title h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.genre-songs-count {
+  font-size: 12px;
+  color: var(--text-secondary, #a0a0a0);
+  border: 1px solid var(--section-border, #2f2739);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.genre-empty-songs {
+  padding: 18px 0;
+  color: var(--text-secondary, #a0a0a0);
+  font-style: italic;
+}
+
+

@@ -541,7 +541,9 @@ router.get("/artists", async (req, res) => {
       LIMIT ${limit} OFFSET ${offset}
     `);
 
-    const [countRows] = await pool.execute("SELECT COUNT(*) as total FROM nghesi");
+    const [countRows] = await pool.execute(
+      "SELECT COUNT(*) as total FROM nghesi"
+    );
     const total = Number(countRows?.[0]?.total || 0);
     const totalPages = Math.max(1, Math.ceil(total / limit));
 
@@ -550,7 +552,9 @@ router.get("/artists", async (req, res) => {
       name: r.name,
       bio: r.bio || "",
       avatarFile: r.avatarFile,
-      avatarUrl: r.avatarFile ? `${BASE_URL}/api/image/artist/${r.avatarFile}` : null,
+      avatarUrl: r.avatarFile
+        ? `${BASE_URL}/api/image/artist/${r.avatarFile}`
+        : null,
     }));
 
     res.json({
@@ -571,7 +575,8 @@ router.get("/artists", async (req, res) => {
 router.get("/artists/:id", async (req, res) => {
   try {
     const artistId = Number(req.params.id);
-    if (!artistId) return res.status(400).json({ error: "artistId không hợp lệ" });
+    if (!artistId)
+      return res.status(400).json({ error: "artistId không hợp lệ" });
 
     const [artistRows] = await pool.execute(
       `
@@ -634,6 +639,135 @@ router.get("/artists/:id", async (req, res) => {
     });
   } catch (error) {
     console.error("Error artist detail:", error);
+    res.status(500).json({ error: "Lỗi server" });
+  }
+});
+
+// =======================================================
+// Genres / Categories (public)
+// Using tables: theloai, baihat_theloai
+// GET /api/genres?page=1&limit=10
+// =======================================================
+router.get("/genres", async (req, res) => {
+  try {
+    let page = parseInt(req.query.page, 10);
+    if (Number.isNaN(page) || page < 1) page = 1;
+    let limit = parseInt(req.query.limit, 10);
+    if (Number.isNaN(limit) || limit < 1) limit = 10;
+    if (limit > 100) limit = 100;
+    const offset = (page - 1) * limit;
+
+    const [rows] = await pool.execute(
+      `
+      SELECT t.TheLoaiID as id,
+             t.TenTheLoai as name,
+             t.MoTa as description,
+             COUNT(DISTINCT bt.BaiHatID) as songCount
+      FROM theloai t
+      LEFT JOIN baihat_theloai bt ON t.TheLoaiID = bt.TheLoaiID
+      GROUP BY t.TheLoaiID
+      ORDER BY t.TheLoaiID DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `
+    );
+
+    const [countRows] = await pool.execute(
+      "SELECT COUNT(*) as total FROM theloai"
+    );
+    const total = Number(countRows?.[0]?.total || 0);
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    const data = rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      description: r.description || "",
+      songCount: Number(r.songCount || 0),
+    }));
+
+    res.json({
+      data,
+      pagination: { page, limit, total, totalPages },
+    });
+  } catch (error) {
+    console.error("Error get genres:", error);
+    res.status(500).json({ error: "Lỗi server khi lấy danh sách thể loại" });
+  }
+});
+
+// =======================================================
+// Genre detail (public)
+// GET /api/genres/:id
+// Returns: { genre, songs }
+// =======================================================
+router.get("/genres/:id", async (req, res) => {
+  try {
+    const genreId = Number(req.params.id);
+    if (!genreId)
+      return res.status(400).json({ error: "genreId không hợp lệ" });
+
+    const [genreRows] = await pool.execute(
+      `
+      SELECT t.TheLoaiID as id,
+             t.TenTheLoai as name,
+             t.MoTa as description,
+             COUNT(DISTINCT bt.BaiHatID) as songCount
+      FROM theloai t
+      LEFT JOIN baihat_theloai bt ON t.TheLoaiID = bt.TheLoaiID
+      WHERE t.TheLoaiID = ?
+      GROUP BY t.TheLoaiID
+      LIMIT 1
+    `,
+      [genreId]
+    );
+
+    if (!genreRows || genreRows.length === 0) {
+      return res.status(404).json({ error: "Genre not found" });
+    }
+
+    const genre = genreRows[0];
+
+    const [songRows] = await pool.execute(
+      `
+      SELECT b.BaiHatID as id,
+             b.TieuDe as title,
+             b.AnhBiaBaiHat as imageUrl,
+             GROUP_CONCAT(DISTINCT n.TenNgheSi SEPARATOR ', ') as artists,
+             b.DuongDanAudio as audioUrl,
+             IFNULL(b.LuotPhat, 0) as listenCount,
+             IFNULL(b.LuotThich, 0) as likeCount
+      FROM baihat b
+      JOIN baihat_theloai bt_filter
+        ON b.BaiHatID = bt_filter.BaiHatID AND bt_filter.TheLoaiID = ?
+      LEFT JOIN baihat_nghesi bn ON b.BaiHatID = bn.BaiHatID
+      LEFT JOIN nghesi n ON bn.NgheSiID = n.NgheSiID
+      GROUP BY b.BaiHatID
+      ORDER BY b.LuotPhat DESC, b.BaiHatID DESC
+    `,
+      [genreId]
+    );
+
+    const songs = songRows.map((s) => ({
+      ...s,
+      artists: s.artists || "Unknown Artist",
+      imageUrl: s.imageUrl
+        ? `${BASE_URL}/api/image/song/${s.imageUrl}`
+        : "https://placehold.co/60x60/7a3c9e/ffffff?text=No+Image",
+      audioUrl: s.audioUrl ? `${BASE_URL}/api/audio/${s.audioUrl}` : null,
+      listenCount: Number(s.listenCount || 0),
+      likeCount: Number(s.likeCount || 0),
+    }));
+
+    res.json({
+      genre: {
+        id: genre.id,
+        name: genre.name,
+        description: genre.description || "",
+        songCount: Number(genre.songCount || 0),
+      },
+      songs,
+    });
+  } catch (error) {
+    console.error("Error genre detail:", error);
     res.status(500).json({ error: "Lỗi server" });
   }
 });
