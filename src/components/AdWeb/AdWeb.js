@@ -1,18 +1,16 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 
 function AdWeb({ isLoggedIn }) {
   const [shouldShowAd, setShouldShowAd] = useState(false);
   const [adLink, setAdLink] = useState('');
-  // Dùng ref để theo dõi trạng thái click mà không gây re-render
-  const hasClickedRef = useRef(false); 
+
+  const AD_LAST_OPENED_KEY = 'ad_last_opened_at_ms';
+  const AD_COOLDOWN_MS = 5 * 60 * 1000; // 5 phút
   
   // Effect 1: Kiểm tra quyền và lấy link quảng cáo
   useEffect(() => {
     const checkAdsStatus = async () => {
       let isVip = false;
-
-      // Reset trạng thái click khi đăng nhập/đăng xuất thay đổi
-      hasClickedRef.current = false; 
 
       if (isLoggedIn) {
         try {
@@ -59,17 +57,25 @@ function AdWeb({ isLoggedIn }) {
   // Effect 2: Lắng nghe click toàn trang
   useEffect(() => {
     const handleGlobalClick = (e) => {
-      // Chỉ xử lý nếu cần hiện quảng cáo, có link, và chưa click lần nào
-      if (shouldShowAd && adLink && !hasClickedRef.current) {
+      // Chỉ xử lý nếu cần hiện quảng cáo và có link
+      if (shouldShowAd && adLink) {
         
         // Quan trọng: Kiểm tra xem click có phải vào nút/link nội bộ không?
         // Nếu muốn quảng cáo hiện ra BẤT KỂ click vào đâu (kể cả nút Play), giữ nguyên.
         // Nếu muốn tránh click nhầm vào nút chức năng, cần check e.target.
 
+        const now = Date.now();
+        const lastOpened = Number(localStorage.getItem(AD_LAST_OPENED_KEY) || 0);
+        const isCooldownActive =
+          Number.isFinite(lastOpened) && lastOpened > 0 && now - lastOpened < AD_COOLDOWN_MS;
+
+        // Rule: chỉ lần đầu vào app (hoặc sau khi hết cooldown 5 phút) mới mở quảng cáo
+        if (isCooldownActive) return;
+
+        // Set timestamp NGAY trước khi open để tránh double-click mở nhiều tab
+        localStorage.setItem(AD_LAST_OPENED_KEY, String(now));
+
         console.log("AdWeb: Opening ad...", adLink);
-        
-        // Đánh dấu đã click NGAY LẬP TỨC để tránh mở nhiều tab
-        hasClickedRef.current = true;
         
         // Mở tab mới
         const newWindow = window.open(adLink, '_blank');
