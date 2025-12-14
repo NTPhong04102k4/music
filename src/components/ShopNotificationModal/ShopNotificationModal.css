@@ -1,0 +1,105 @@
+.shop-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.shop-modal {
+  position: relative;
+  width: min(520px, 100%);
+  background: #231b2e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+  padding: 18px 18px 16px;
+  color: #fff;
+  animation: shopModalIn 160ms ease-out forwards;
+}
+
+@keyframes shopModalIn {
+  from {
+    transform: translateY(8px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.shop-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+.shop-modal-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(1.04);
+}
+
+.shop-modal-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(155, 77, 224, 0.16);
+  border: 1px solid rgba(155, 77, 224, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: #9b4de0;
+  margin-bottom: 12px;
+}
+
+.shop-modal-title {
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.shop-modal-message {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.shop-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.shop-modal-cta {
+  border: none;
+  cursor: pointer;
+  background: #9b4de0;
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.shop-modal-cta:hover {
+  transform: scale(1.03);
+  opacity: 0.95;
+}
+
+

@@ -17,6 +17,7 @@ import AddToPlaylistModal from "./components/AddToPlaylistModal/AddToPlaylistMod
 import SongActionModal from "./components/SongActionModal/SongActionModal";
 import UserProfile from "./components/UserProfile/UserProfile";
 import AdWeb from "./components/AdWeb/AdWeb";
+import ShopNotificationModal from "./components/ShopNotificationModal/ShopNotificationModal";
 import VipUpgrade from "./components/VipUpgrade/VipUpgrade";
 import PaymentPage from "./components/PaymentPage/PaymentPage";
 import InvoiceHistory from "./components/InvoiceHistory/InvoiceHistory";
@@ -37,6 +38,9 @@ import GenreLibrary from "./components/GenreLibrary/GenreLibrary";
 import GenreDetail from "./components/GenreDetail/GenreDetail";
 
 function App() {
+  // Link cửa hàng dụng cụ âm nhạc (đổi theo cửa hàng bạn muốn)
+  const MUSIC_SHOP_URL = "https://your-music-shop-link.com";
+
   // --- TRẠNG THÁI (STATE) ---
   const [currentSong, setCurrentSong] = useState(null);
   const [playlist, setPlaylist] = useState([]);
@@ -560,6 +564,7 @@ function App() {
   return (
     <div className="app">
       <AdWeb isLoggedIn={isLoggedIn} />
+      <ShopNotificationModal shopUrl={MUSIC_SHOP_URL} />
 
       <Sidebar
         onLoginClick={handleLoginClick}
