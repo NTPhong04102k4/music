@@ -226,29 +226,6 @@
     opacity: 0.9;
 }
 
-/* Nút Chỉnh sửa thông tin */
-.edit-profile-btn {
-  margin-top: 10px;
-  width: 100%;
-  background-color: var(--player-primary-color, #9b4de0);
-  color: #fff;
-  border: none;
-  padding: 14px;
-  border-radius: 99px;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.edit-profile-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(155, 77, 224, 0.3);
-  filter: brightness(1.1);
-}
-
 /* Responsive */
 @media (max-width: 600px) {
     .user-profile-container {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'; // Thêm useRef
 import './UserProfile.css';
-import { IoPersonCircleOutline, IoCameraOutline, IoMusicalNotes, IoHeart, IoDiamond, IoTimeOutline } from 'react-icons/io5';
+import { IoCameraOutline, IoMusicalNotes, IoHeart, IoDiamond } from 'react-icons/io5';
 
 function UserProfile({ user }) {
   const [stats, setStats] = useState({
@@ -103,12 +103,6 @@ function UserProfile({ user }) {
     }
   };
 
-  // ... (giữ nguyên formatDate)
-  const formatDate = (dateString) => {
-      if (!dateString) return '';
-      return new Date(dateString).toLocaleDateString('vi-VN');
-  };
-
   if (!user) return <div className="user-profile-loading">Đang tải thông tin...</div>;
 
   return (
@@ -198,9 +192,6 @@ function UserProfile({ user }) {
             </div>
           </div>
           
-          <button className="zm-btn edit-profile-btn" onClick={() => alert("Chức năng đang phát triển")}>
-            Chỉnh sửa thông tin
-          </button>
         </div>
       </div>
     </div>
