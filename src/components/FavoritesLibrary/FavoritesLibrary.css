@@ -139,6 +139,26 @@
     font-size: 20px;
 }
 
+.favorite-delete-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 20px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 8px;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.favorite-delete-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.95);
+  transform: scale(1.05);
+}
+
 .no-favorites {
   text-align: center;
   color: var(--text-secondary, #a0a0a0);

@@ -42,11 +42,50 @@
   overflow: hidden;
   box-shadow: 0 5px 15px rgba(0,0,0,0.3);
   flex-shrink: 0;
+  position: relative;
+  background: #2f2739;
 }
 .playlist-detail-cover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Playlist cover collage (up to 4 song images) */
+.playlist-detail-cover .playlist-cover-collage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  background: #2f2739;
+}
+
+.playlist-detail-cover .playlist-cover-collage.count-1 {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+.playlist-detail-cover .playlist-cover-collage.count-2 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr;
+}
+
+.playlist-detail-cover .playlist-cover-collage.count-4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.playlist-detail-cover .playlist-cover-collage .collage-cell {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #2f2739;
+}
+
+.playlist-detail-cover .playlist-cover-collage .collage-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .playlist-detail-info {
@@ -145,6 +184,26 @@
 .song-actions-right {
   color: var(--text-secondary, #a0a0a0);
   font-size: 20px;
+}
+
+.playlist-song-delete-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 20px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 8px;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.playlist-song-delete-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+  transform: scale(1.05);
 }
 .no-songs {
     padding: 30px;

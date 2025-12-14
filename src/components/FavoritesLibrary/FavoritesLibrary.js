@@ -1,33 +1,72 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './FavoritesLibrary.css';
-import { IoPlay, IoHeart } from 'react-icons/io5';
+import { IoPlay, IoTrashOutline } from 'react-icons/io5';
 
 function FavoritesLibrary({ onPlaySong }) {
   const [favorites, setFavorites] = useState([]);
 
-  useEffect(() => {
+  const fetchFavorites = useCallback(async () => {
     const token = localStorage.getItem('token');
-    if (token) {
-      fetch('http://localhost:5001/api/favorites', {
+    if (!token) return;
+
+    try {
+      const res = await fetch('http://localhost:5001/api/favorites', {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setFavorites(data);
-        } else {
-          console.error("API favorites không trả về mảng:", data);
-          setFavorites([]);
-        }
-      })
-      .catch(err => {
-        console.error('Error loading favorites:', err);
-        setFavorites([]);
+          Authorization: `Bearer ${token}`,
+        },
       });
+      const data = await res.json().catch(() => []);
+      if (!res.ok) throw new Error(data?.error || 'Không thể tải danh sách yêu thích');
+
+      if (Array.isArray(data)) setFavorites(data);
+      else {
+        console.error('API favorites không trả về mảng:', data);
+        setFavorites([]);
+      }
+    } catch (err) {
+      console.error('Error loading favorites:', err);
+      setFavorites([]);
     }
   }, []);
+
+  useEffect(() => {
+    fetchFavorites();
+  }, [fetchFavorites]);
+
+  const handleRemoveFavorite = useCallback(
+    async (songId, e) => {
+      e?.stopPropagation?.();
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Vui lòng đăng nhập để xóa bài hát khỏi yêu thích');
+        return;
+      }
+
+      const ok = window.confirm('Xóa bài hát khỏi danh sách yêu thích?');
+      if (!ok) return;
+
+      try {
+        // Endpoint này toggle: nếu đã thích thì sẽ "bỏ thích" (xóa khỏi favorites)
+        const res = await fetch(`http://localhost:5001/api/favorites/${songId}`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.error || 'Xóa khỏi yêu thích thất bại');
+
+        // Gọi GET để làm mới dữ liệu
+        await fetchFavorites();
+      } catch (err) {
+        console.error('Error removing favorite:', err);
+        alert(err?.message || 'Lỗi khi xóa bài hát khỏi yêu thích');
+      }
+    },
+    [fetchFavorites]
+  );
 
   return (
     <div className="favorites-library">
@@ -71,7 +110,14 @@ function FavoritesLibrary({ onPlaySong }) {
               </div>
 
               <div className="favorite-item-right">
-                 <IoHeart style={{ color: '#9b4de0' }} />
+                <button
+                  className="favorite-delete-btn"
+                  title="Xóa khỏi yêu thích"
+                  aria-label="Xóa khỏi yêu thích"
+                  onClick={(e) => handleRemoveFavorite(song.id, e)}
+                >
+                  <IoTrashOutline />
+                </button>
               </div>
             </div>
           ))

@@ -2,6 +2,79 @@ import React, { useState, useEffect } from 'react';
 import './PlaylistLibrary.css';
 import { IoPlay, IoAdd, IoClose } from 'react-icons/io5';
 
+function PlaylistCoverCollage({ images = [], fallbackSrc, alt }) {
+  const list = Array.isArray(images) ? images.filter(Boolean).slice(0, 4) : [];
+  const count = list.length;
+
+  if (count === 0) {
+    return (
+      <img
+        src={fallbackSrc}
+        alt={alt}
+        onError={(e) => {
+          e.target.src = 'https://placehold.co/300x300/2f2739/ffffff?text=Playlist';
+        }}
+      />
+    );
+  }
+
+  if (count === 1) {
+    return (
+      <div className="playlist-cover-collage count-1" aria-label={alt}>
+        <div className="collage-cell">
+          <img
+            src={list[0]}
+            alt={alt}
+            onError={(e) => {
+              e.target.src =
+                'https://placehold.co/300x300/2f2739/ffffff?text=Playlist';
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (count === 2) {
+    return (
+      <div className="playlist-cover-collage count-2" aria-label={alt}>
+        {list.slice(0, 2).map((src, i) => (
+          <div className="collage-cell" key={i}>
+            <img
+              src={src}
+              alt={alt}
+              onError={(e) => {
+                e.target.src =
+                  'https://placehold.co/300x300/2f2739/ffffff?text=Playlist';
+              }}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // 3 or 4 -> render 2x2, missing cells are just background
+  return (
+    <div className="playlist-cover-collage count-4" aria-label={alt}>
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div className="collage-cell" key={i}>
+          {list[i] ? (
+            <img
+              src={list[i]}
+              alt={alt}
+              onError={(e) => {
+                e.target.src =
+                  'https://placehold.co/300x300/2f2739/ffffff?text=Playlist';
+              }}
+            />
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function PlaylistLibrary({ onViewPlaylistDetail }) {
   const [playlists, setPlaylists] = useState([]);
   
@@ -101,10 +174,13 @@ function PlaylistLibrary({ onViewPlaylistDetail }) {
               onClick={() => onViewPlaylistDetail(playlist.id)}
             >
               <div className="playlist-image">
-                <img 
-                  src={playlist.coverImage || 'https://placehold.co/300x300/2f2739/ffffff?text=Playlist'} 
-                  alt={playlist.name} 
-                  onError={(e) => { e.target.src = 'https://placehold.co/300x300/2f2739/ffffff?text=Playlist'; }}
+                <PlaylistCoverCollage
+                  images={playlist.coverImages}
+                  fallbackSrc={
+                    playlist.coverImage ||
+                    'https://placehold.co/300x300/2f2739/ffffff?text=Playlist'
+                  }
+                  alt={playlist.name}
                 />
                 <div className="playlist-overlay">
                   <button className="player-btn icon-btn play-btn">

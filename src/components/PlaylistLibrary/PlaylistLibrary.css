@@ -70,6 +70,48 @@
   transform: scale(1.1);
 }
 
+/* Playlist cover collage (up to 4 song images) */
+.playlist-cover-collage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  background: #2f2739;
+}
+
+.playlist-cover-collage.count-1 {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+.playlist-cover-collage.count-2 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr;
+}
+
+.playlist-cover-collage.count-4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.playlist-cover-collage .collage-cell {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #2f2739;
+}
+
+.playlist-cover-collage .collage-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+  display: block;
+}
+
+.playlist-card:hover .playlist-cover-collage .collage-cell img {
+  transform: scale(1.06);
+}
+
 .playlist-overlay {
   position: absolute;
   top: 0;

@@ -393,16 +393,49 @@ router.get("/playlists", authenticateToken, async (req, res) => {
     const userId = req.user.userId;
     const [rows] = await pool.execute(
       `
-      SELECT DanhSachID as id, Ten as name, MoTa as description,
-             NgayTao as createdAt
+      SELECT d.DanhSachID as id,
+             d.Ten as name,
+             d.MoTa as description,
+             d.NgayTao as createdAt,
+             (
+               SELECT GROUP_CONCAT(x.AnhBiaBaiHat SEPARATOR ',')
+               FROM (
+                 SELECT b.AnhBiaBaiHat
+                 FROM danhsach_baihat db
+                 JOIN baihat b ON db.BaiHatID = b.BaiHatID
+                 WHERE db.DanhSachID = d.DanhSachID
+                 ORDER BY db.ThuTu ASC
+                 LIMIT 4
+               ) x
+             ) as coverFiles
       FROM danhsachphat
-      WHERE NguoiDungID = ?
-      ORDER BY NgayTao DESC
+      d
+      WHERE d.NguoiDungID = ?
+      ORDER BY d.NgayTao DESC
     `,
       [userId]
     );
 
-    res.json(rows);
+    const data = rows.map((r) => {
+      const coverImages = String(r.coverFiles || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((f) => `${BASE_URL}/api/image/song/${f}`);
+
+      return {
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        createdAt: r.createdAt,
+        coverImage:
+          "https://placehold.co/300x300/2f2739/ffffff?text=" +
+          encodeURIComponent(r.name || "Playlist"),
+        coverImages,
+      };
+    });
+
+    res.json(data);
   } catch (error) {
     console.error("Error fetching playlists:", error);
     res.status(500).json({ error: "Lỗi server: " + error.message });
@@ -452,6 +485,46 @@ router.post(
       res.json({ message: "Đã thêm bài hát vào playlist" });
     } catch (error) {
       console.error("Error adding song to playlist:", error);
+      res.status(500).json({ error: "Lỗi server: " + error.message });
+    }
+  }
+);
+
+// Xóa bài hát khỏi playlist
+// DELETE /api/playlists/:playlistId/songs/:songId
+router.delete(
+  "/playlists/:playlistId/songs/:songId",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const userId = req.user.userId;
+      const playlistId = req.params.playlistId;
+      const songId = req.params.songId;
+
+      const [playlist] = await pool.execute(
+        "SELECT DanhSachID FROM danhsachphat WHERE DanhSachID = ? AND NguoiDungID = ?",
+        [playlistId, userId]
+      );
+      if (!playlist || playlist.length === 0) {
+        return res
+          .status(404)
+          .json({ error: "Playlist không tồn tại hoặc không có quyền" });
+      }
+
+      const [result] = await pool.execute(
+        "DELETE FROM danhsach_baihat WHERE DanhSachID = ? AND BaiHatID = ?",
+        [playlistId, songId]
+      );
+
+      if (!result || result.affectedRows === 0) {
+        return res
+          .status(404)
+          .json({ error: "Bài hát không có trong playlist" });
+      }
+
+      res.json({ message: "Đã xóa bài hát khỏi playlist" });
+    } catch (error) {
+      console.error("Error removing song from playlist:", error);
       res.status(500).json({ error: "Lỗi server: " + error.message });
     }
   }
@@ -509,6 +582,10 @@ router.get("/playlists/:playlistId", authenticateToken, async (req, res) => {
 
     res.json({
       ...playlistInfo,
+      coverImages: songs
+        .map((s) => s.imageUrl)
+        .filter(Boolean)
+        .slice(0, 4),
       songs,
     });
   } catch (error) {
