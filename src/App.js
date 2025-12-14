@@ -45,6 +45,8 @@ function App() {
   const [currentSong, setCurrentSong] = useState(null);
   const [playlist, setPlaylist] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const playerRef = useRef(null);
 
   // (Admin view state đã được gỡ vì chưa dùng ở UI hiện tại)
 
@@ -332,6 +334,10 @@ function App() {
     }
   }, []);
 
+  const handleTogglePlayPause = useCallback(() => {
+    playerRef.current?.togglePlayPause?.();
+  }, []);
+
   const handleNextSong = useCallback(() => {
     if (playlist.length === 0) return;
     const nextIndex = (currentIndex + 1) % playlist.length;
@@ -589,6 +595,7 @@ function App() {
       />
 
       <PlayerControls
+        ref={playerRef}
         currentSong={currentSong}
         onNext={handleNextSong}
         onPrev={handlePrevSong}
@@ -598,6 +605,7 @@ function App() {
         onToggleFavorite={() =>
           currentSong && handleToggleFavorite(currentSong.id)
         }
+        onPlayStateChange={setIsPlaying}
         onTimeUpdate={handleTimeUpdate}
         onOpenSongAction={handleOpenSongAction}
         onOpenSongDetail={handleOpenSongDetail}
@@ -736,6 +744,9 @@ function App() {
             onPlaySong={handlePlaySong}
             onAddToPlaylist={handleOpenAddToPlaylist}
             onOpenSongAction={handleOpenSongAction}
+            currentSong={currentSong}
+            isPlaying={isPlaying}
+            onTogglePlayPause={handleTogglePlayPause}
           />
         )}
 
@@ -768,6 +779,9 @@ function App() {
           <ListenHistory
             onPlaySong={handlePlaySong}
             onAddToPlaylist={handleOpenAddToPlaylist}
+            currentSong={currentSong}
+            isPlaying={isPlaying}
+            onTogglePlayPause={handleTogglePlayPause}
           />
         )}
         {/* === MỚI: Render trang Playlist Library === */}
@@ -782,6 +796,9 @@ function App() {
             onBack={handleViewPlaylistLibrary} // Back về danh sách playlist
             onPlaySong={handlePlaySong}
             onAddToPlaylist={handleOpenAddToPlaylist}
+            currentSong={currentSong}
+            isPlaying={isPlaying}
+            onTogglePlayPause={handleTogglePlayPause}
           />
         )}
         {currentView === "profile" && (

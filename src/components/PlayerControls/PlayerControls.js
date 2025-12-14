@@ -1,15 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import './PlayerControls.css'; 
+import React, { useEffect, useImperativeHandle, useState } from "react";
+import "./PlayerControls.css";
 
 import {
-  IoExpand, IoHeartOutline, IoHeart, 
-  IoEllipsisHorizontal, IoShuffleOutline,
-  IoPlaySkipBack, IoPlaySkipForward, IoPlay, IoPause, IoRepeatOutline,
-  IoVolumeMediumOutline, IoVolumeMuteOutline, IoVolumeLowOutline,
-  IoMicOutline, IoListOutline,
-} from 'react-icons/io5';
+  IoExpand,
+  IoHeartOutline,
+  IoHeart,
+  IoEllipsisHorizontal,
+  IoShuffleOutline,
+  IoPlaySkipBack,
+  IoPlaySkipForward,
+  IoPlay,
+  IoPause,
+  IoRepeatOutline,
+  IoVolumeMediumOutline,
+  IoVolumeMuteOutline,
+  IoVolumeLowOutline,
+  IoMicOutline,
+  IoListOutline,
+} from "react-icons/io5";
 
-function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPlaylistQueue, isFavorite, onToggleFavorite, onTimeUpdate, onOpenSongAction, onOpenSongDetail, seekToSeconds, onSeekHandled }) {
+const PlayerControls = React.forwardRef(function PlayerControls(
+  {
+    currentSong,
+    onNext,
+    onPrev,
+    onTogglePlaylist,
+    showPlaylistQueue,
+    isFavorite,
+    onToggleFavorite,
+    onTimeUpdate,
+    onOpenSongAction,
+    onOpenSongDetail,
+    seekToSeconds,
+    onSeekHandled,
+    onPlayStateChange,
+  },
+  ref
+) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(80);
@@ -17,7 +44,7 @@ function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPla
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isShuffled, setIsShuffled] = useState(false);
-  const [repeatMode, setRepeatMode] = useState(0); 
+  const [repeatMode, setRepeatMode] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(80);
   const [showLyrics, setShowLyrics] = useState(false);
@@ -28,48 +55,48 @@ function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPla
       if (audio) {
         audio.pause();
         audio.currentTime = 0;
-        audio.src = ''; 
+        audio.src = "";
       }
       const newAudio = new Audio(currentSong.audioUrl);
       newAudio.volume = volume / 100;
-      
-      newAudio.addEventListener('loadeddata', () => {
+
+      newAudio.addEventListener("loadeddata", () => {
         setDuration(newAudio.duration);
-        setIsPlaying(true); 
+        setIsPlaying(true);
       });
 
-      newAudio.addEventListener('timeupdate', () => {
+      newAudio.addEventListener("timeupdate", () => {
         const current = newAudio.currentTime;
         const total = newAudio.duration;
         setCurrentTime(current);
         setProgress(total ? (current / total) * 100 : 0);
         if (onTimeUpdate) {
-            onTimeUpdate(current);
+          onTimeUpdate(current);
         }
       });
 
-      newAudio.addEventListener('ended', () => {
+      newAudio.addEventListener("ended", () => {
         if (repeatMode === 2) {
           newAudio.currentTime = 0;
           newAudio.play();
-        } else if (onNext) { 
+        } else if (onNext) {
           onNext();
         } else {
           setIsPlaying(false);
           setProgress(0);
         }
       });
-      
+
       setAudio(newAudio);
       setProgress(0);
-      
+
       return () => {
         if (newAudio) {
           newAudio.pause();
-          newAudio.src = '';
-          newAudio.removeEventListener('loadeddata', () => {});
-          newAudio.removeEventListener('timeupdate', () => {});
-          newAudio.removeEventListener('ended', () => {});
+          newAudio.src = "";
+          newAudio.removeEventListener("loadeddata", () => {});
+          newAudio.removeEventListener("timeupdate", () => {});
+          newAudio.removeEventListener("ended", () => {});
         }
       };
     } else if (!currentSong) {
@@ -78,13 +105,13 @@ function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPla
         setAudio(null);
       }
     }
-  }, [currentSong, onNext, repeatMode]); 
+  }, [currentSong, onNext, repeatMode]);
 
   useEffect(() => {
     if (audio) {
       if (isPlaying) {
-        audio.play().catch(error => {
-          console.error('Error playing audio:', error);
+        audio.play().catch((error) => {
+          console.error("Error playing audio:", error);
           setIsPlaying(false);
         });
       } else {
@@ -92,6 +119,13 @@ function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPla
       }
     }
   }, [isPlaying, audio]);
+
+  // Sync play state upwards (for list UI)
+  useEffect(() => {
+    if (typeof onPlayStateChange === "function") {
+      onPlayStateChange(!!isPlaying);
+    }
+  }, [isPlaying, onPlayStateChange]);
 
   useEffect(() => {
     if (audio) {
@@ -117,6 +151,24 @@ function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPla
     if (audio) setIsPlaying(!isPlaying);
   };
 
+  // Expose controls to parent (App) for list play/pause buttons
+  useImperativeHandle(
+    ref,
+    () => ({
+      togglePlayPause: () => {
+        if (audio) setIsPlaying((prev) => !prev);
+      },
+      play: () => {
+        if (audio) setIsPlaying(true);
+      },
+      pause: () => {
+        if (audio) setIsPlaying(false);
+      },
+      isPlaying: () => !!isPlaying,
+    }),
+    [audio, isPlaying]
+  );
+
   const handleProgressChange = (e) => {
     if (audio) {
       const newProgress = e.target.value;
@@ -131,7 +183,9 @@ function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPla
     if (audio && audio.currentTime > 3) audio.currentTime = 0;
     else if (onPrev) onPrev();
   };
-  const handleNext = () => { if (onNext) onNext(); };
+  const handleNext = () => {
+    if (onNext) onNext();
+  };
 
   const handleVolumeChange = (e) => {
     const newVolume = Number(e.target.value);
@@ -145,17 +199,19 @@ function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPla
       setVolume(newVolume);
       setIsMuted(false);
     } else {
-      setPreviousVolume(volume); 
+      setPreviousVolume(volume);
       setVolume(0);
       setIsMuted(true);
     }
   };
 
   const formatTime = (time) => {
-    if (isNaN(time) || time === 0) return '00:00';
+    if (isNaN(time) || time === 0) return "00:00";
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    return `${minutes.toString().padStart(2, "0")}:${seconds
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   return (
@@ -163,14 +219,23 @@ function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPla
       <div className="player-left">
         <div
           className="song-cover"
-          onDoubleClick={() => currentSong && onOpenSongDetail && onOpenSongDetail(currentSong)}
+          onDoubleClick={() =>
+            currentSong && onOpenSongDetail && onOpenSongDetail(currentSong)
+          }
           title="Double click để xem chi tiết"
         >
           <img
-            src={currentSong ? (currentSong.cover || currentSong.imageUrl || 'https://placehold.co/60x60/a64883/fff?text=No+Image') : 'https://placehold.co/60x60/130c1c/fff?text=NCT'}
+            src={
+              currentSong
+                ? currentSong.cover ||
+                  currentSong.imageUrl ||
+                  "https://placehold.co/60x60/a64883/fff?text=No+Image"
+                : "https://placehold.co/60x60/130c1c/fff?text=NCT"
+            }
             alt="Song Cover"
             onError={(e) => {
-              e.target.src = 'https://placehold.co/60x60/a64883/fff?text=No+Image';
+              e.target.src =
+                "https://placehold.co/60x60/a64883/fff?text=No+Image";
             }}
           />
           <div className="cover-icon">
@@ -179,29 +244,39 @@ function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPla
         </div>
         <div
           className="song-info"
-          onDoubleClick={() => currentSong && onOpenSongDetail && onOpenSongDetail(currentSong)}
+          onDoubleClick={() =>
+            currentSong && onOpenSongDetail && onOpenSongDetail(currentSong)
+          }
           title="Double click để xem chi tiết"
         >
-          <div className="song-name">{currentSong ? currentSong.title : 'Chọn bài hát'}</div>
-          <div className="artist-name">{currentSong ? currentSong.artists : 'Nghệ sĩ'}</div>
+          <div className="song-name">
+            {currentSong ? currentSong.title : "Chọn bài hát"}
+          </div>
+          <div className="artist-name">
+            {currentSong ? currentSong.artists : "Nghệ sĩ"}
+          </div>
         </div>
         <div className="song-actions">
           {/* Nút Yêu thích */}
-          <button 
-            className={`player-btn icon-btn ${isFavorite ? 'active' : ''}`}
+          <button
+            className={`player-btn icon-btn ${isFavorite ? "active" : ""}`}
             onClick={onToggleFavorite}
             disabled={!currentSong}
             title={isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
           >
-             {isFavorite ? <IoHeart className="heart-active" /> : <IoHeartOutline />}
+            {isFavorite ? (
+              <IoHeart className="heart-active" />
+            ) : (
+              <IoHeartOutline />
+            )}
           </button>
-        
-         <button 
-              className="player-btn icon-btn"
-              // Khi click, gọi hàm mở modal và truyền bài hát hiện tại vào
-              onClick={() => currentSong && onOpenSongAction(currentSong)}
-              disabled={!currentSong}
-              title="Khác"
+
+          <button
+            className="player-btn icon-btn"
+            // Khi click, gọi hàm mở modal và truyền bài hát hiện tại vào
+            onClick={() => currentSong && onOpenSongAction(currentSong)}
+            disabled={!currentSong}
+            title="Khác"
           >
             <IoEllipsisHorizontal />
           </button>
@@ -210,19 +285,29 @@ function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPla
 
       <div className="player-center">
         <div className="player-controls-buttons">
-          <button className={`player-btn icon-btn ${isShuffled ? 'active' : ''}`} onClick={handleShuffle}>
+          <button
+            className={`player-btn icon-btn ${isShuffled ? "active" : ""}`}
+            onClick={handleShuffle}
+          >
             <IoShuffleOutline />
           </button>
           <button className="player-btn icon-btn" onClick={handlePrev}>
             <IoPlaySkipBack />
           </button>
-          <button className="player-btn icon-btn play-pause-btn" onClick={handlePlayPause} disabled={!audio}>
+          <button
+            className="player-btn icon-btn play-pause-btn"
+            onClick={handlePlayPause}
+            disabled={!audio}
+          >
             {isPlaying ? <IoPause /> : <IoPlay />}
           </button>
           <button className="player-btn icon-btn" onClick={handleNext}>
             <IoPlaySkipForward />
           </button>
-          <button className={`player-btn icon-btn ${repeatMode > 0 ? 'active' : ''}`} onClick={handleRepeat}>
+          <button
+            className={`player-btn icon-btn ${repeatMode > 0 ? "active" : ""}`}
+            onClick={handleRepeat}
+          >
             <IoRepeatOutline />
             {repeatMode === 2 && <span className="repeat-one">1</span>}
           </button>
@@ -234,10 +319,12 @@ function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPla
             <input
               type="range"
               className="progress-slider"
-              min="0" max="100" step="0.1"
+              min="0"
+              max="100"
+              step="0.1"
               value={progress || 0}
               onChange={handleProgressChange}
-              style={{ '--progress-percent': `${progress || 0}%` }}
+              style={{ "--progress-percent": `${progress || 0}%` }}
               disabled={!audio}
             />
           </div>
@@ -248,21 +335,38 @@ function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPla
       <div className="player-right">
         <button className="player-btn quality-btn">128kbps</button>
         <button className="player-btn icon-btn" onClick={handleMute}>
-          {isMuted || Math.round(volume) === 0 ? <IoVolumeMuteOutline /> : volume < 50 ? <IoVolumeLowOutline /> : <IoVolumeMediumOutline />}
+          {isMuted || Math.round(volume) === 0 ? (
+            <IoVolumeMuteOutline />
+          ) : volume < 50 ? (
+            <IoVolumeLowOutline />
+          ) : (
+            <IoVolumeMediumOutline />
+          )}
         </button>
         <div className="volume-slider-container">
           <input
-            type="range" className="volume-slider" min="0" max="100" step="1"
-            value={volume} onChange={handleVolumeChange}
-            style={{ '--progress-percent': `${volume}%` }}
+            type="range"
+            className="volume-slider"
+            min="0"
+            max="100"
+            step="1"
+            value={volume}
+            onChange={handleVolumeChange}
+            style={{ "--progress-percent": `${volume}%` }}
           />
         </div>
         <span className="divider"></span>
-        <button className={`player-btn icon-btn ${showLyrics ? 'active' : ''}`} onClick={() => setShowLyrics(!showLyrics)}>
+        <button
+          className={`player-btn icon-btn ${showLyrics ? "active" : ""}`}
+          onClick={() => setShowLyrics(!showLyrics)}
+        >
           <IoMicOutline />
         </button>
         {/* Nút Danh sách phát */}
-        <button className={`player-btn icon-btn ${showPlaylistQueue ? 'active' : ''}`} onClick={onTogglePlaylist}>
+        <button
+          className={`player-btn icon-btn ${showPlaylistQueue ? "active" : ""}`}
+          onClick={onTogglePlaylist}
+        >
           <IoListOutline />
         </button>
       </div>
@@ -280,6 +384,6 @@ function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPla
       )}
     </div>
   );
-}
+});
 
 export default PlayerControls;

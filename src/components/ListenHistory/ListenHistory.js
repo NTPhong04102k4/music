@@ -1,21 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import './ListenHistory.css';
-import { IoPlay, IoTimeOutline } from 'react-icons/io5';
+import React, { useState, useEffect } from "react";
+import "./ListenHistory.css";
+import { IoPause, IoPlay, IoTimeOutline } from "react-icons/io5";
 
-function ListenHistory({ onPlaySong }) {
+function ListenHistory({
+  onPlaySong,
+  currentSong,
+  isPlaying,
+  onTogglePlayPause,
+}) {
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token) {
-      fetch('http://localhost:5001/api/history', {
+      fetch("http://localhost:5001/api/history", {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       })
-      .then(res => res.json())
-      .then(data => setHistory(data))
-      .catch(err => console.error('Error loading history:', err));
+        .then((res) => res.json())
+        .then((data) => setHistory(data))
+        .catch((err) => console.error("Error loading history:", err));
     }
   }, []);
 
@@ -25,7 +30,7 @@ function ListenHistory({ onPlaySong }) {
     const now = new Date();
     const seconds = Math.floor((now - date) / 1000);
 
-    if (seconds < 60) return 'Vừa xong';
+    if (seconds < 60) return "Vừa xong";
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes} phút trước`;
     const hours = Math.floor(minutes / 60);
@@ -38,9 +43,13 @@ function ListenHistory({ onPlaySong }) {
     <div className="listen-history">
       <div className="history-header">
         <h2>Nghe Gần Đây</h2>
-        <button 
+        <button
           className="zm-btn play-all-btn"
           onClick={() => history.length > 0 && onPlaySong(history[0], history)}
+          disabled={history.length === 0}
+          title={
+            history.length === 0 ? "Chưa có bài hát để phát" : "Phát tất cả"
+          }
         >
           <IoPlay /> PHÁT TẤT CẢ
         </button>
@@ -53,17 +62,20 @@ function ListenHistory({ onPlaySong }) {
           </div>
         ) : (
           history.map((song, index) => (
-            <div 
-              className="history-item" 
+            <div
+              className="history-item"
               key={`${song.id}-${index}`} // Key unique vì 1 bài có thể nghe nhiều lần
               onClick={() => onPlaySong(song, history)}
             >
               <div className="history-item-left">
-                <img 
-                  src={song.imageUrl} 
-                  alt={song.title} 
-                  className="history-item-cover" 
-                  onError={(e) => { e.target.src = 'https://placehold.co/60x60/7a3c9e/ffffff?text=Err'; }}
+                <img
+                  src={song.imageUrl}
+                  alt={song.title}
+                  className="history-item-cover"
+                  onError={(e) => {
+                    e.target.src =
+                      "https://placehold.co/60x60/7a3c9e/ffffff?text=Err";
+                  }}
                 />
                 <div className="history-item-info">
                   <h4>{song.title}</h4>
@@ -71,9 +83,23 @@ function ListenHistory({ onPlaySong }) {
                 </div>
               </div>
               <div className="history-item-right">
-                 <span className="time-ago">
+                {String(song.id) === String(currentSong?.id) ? (
+                  <button
+                    className="history-now-btn"
+                    title={isPlaying ? "Tạm dừng" : "Phát"}
+                    aria-label={isPlaying ? "Tạm dừng" : "Phát"}
+                    onClick={(e) => {
+                      e?.stopPropagation?.();
+                      onTogglePlayPause?.();
+                    }}
+                  >
+                    {isPlaying ? <IoPause /> : <IoPlay />}
+                  </button>
+                ) : (
+                  <span className="time-ago">
                     <IoTimeOutline /> {formatTimeAgo(song.playedAt)}
-                 </span>
+                  </span>
+                )}
               </div>
             </div>
           ))

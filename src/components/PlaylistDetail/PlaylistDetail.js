@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import './PlaylistDetail.css';
-import { IoArrowBack, IoPlay, IoTrashOutline } from 'react-icons/io5';
+import React, { useState, useEffect, useCallback } from "react";
+import "./PlaylistDetail.css";
+import { IoArrowBack, IoPause, IoPlay, IoTrashOutline } from "react-icons/io5";
 
 function PlaylistCoverCollage({ images = [], fallbackSrc, alt }) {
   const list = Array.isArray(images) ? images.filter(Boolean).slice(0, 4) : [];
@@ -12,7 +12,8 @@ function PlaylistCoverCollage({ images = [], fallbackSrc, alt }) {
         src={fallbackSrc}
         alt={alt}
         onError={(e) => {
-          e.target.src = 'https://placehold.co/300x300/2f2739/ffffff?text=Playlist';
+          e.target.src =
+            "https://placehold.co/300x300/2f2739/ffffff?text=Playlist";
         }}
       />
     );
@@ -27,7 +28,7 @@ function PlaylistCoverCollage({ images = [], fallbackSrc, alt }) {
             alt={alt}
             onError={(e) => {
               e.target.src =
-                'https://placehold.co/300x300/2f2739/ffffff?text=Playlist';
+                "https://placehold.co/300x300/2f2739/ffffff?text=Playlist";
             }}
           />
         </div>
@@ -45,7 +46,7 @@ function PlaylistCoverCollage({ images = [], fallbackSrc, alt }) {
               alt={alt}
               onError={(e) => {
                 e.target.src =
-                  'https://placehold.co/300x300/2f2739/ffffff?text=Playlist';
+                  "https://placehold.co/300x300/2f2739/ffffff?text=Playlist";
               }}
             />
           </div>
@@ -64,7 +65,7 @@ function PlaylistCoverCollage({ images = [], fallbackSrc, alt }) {
               alt={alt}
               onError={(e) => {
                 e.target.src =
-                  'https://placehold.co/300x300/2f2739/ffffff?text=Playlist';
+                  "https://placehold.co/300x300/2f2739/ffffff?text=Playlist";
               }}
             />
           ) : null}
@@ -74,33 +75,43 @@ function PlaylistCoverCollage({ images = [], fallbackSrc, alt }) {
   );
 }
 
-function PlaylistDetail({ playlistId, onBack, onPlaySong }) {
+function PlaylistDetail({
+  playlistId,
+  onBack,
+  onPlaySong,
+  currentSong,
+  isPlaying,
+  onTogglePlayPause,
+}) {
   const [playlistInfo, setPlaylistInfo] = useState(null);
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchPlaylistDetail = useCallback(async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token || !playlistId) return;
 
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5001/api/playlists/${playlistId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `http://localhost:5001/api/playlists/${playlistId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data?.error || 'Không thể tải playlist');
+        throw new Error(data?.error || "Không thể tải playlist");
       }
 
       const { songs: fetchedSongs, ...info } = data || {};
       setPlaylistInfo(info || null);
       setSongs(fetchedSongs || []);
     } catch (err) {
-      console.error('Error loading playlist detail:', err);
+      console.error("Error loading playlist detail:", err);
       setPlaylistInfo(null);
       setSongs([]);
     } finally {
@@ -117,20 +128,20 @@ function PlaylistDetail({ playlistId, onBack, onPlaySong }) {
       e?.stopPropagation?.();
 
       if (!playlistId || !songId) return;
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        alert('Vui lòng đăng nhập để xóa bài hát khỏi playlist');
+        alert("Vui lòng đăng nhập để xóa bài hát khỏi playlist");
         return;
       }
 
-      const ok = window.confirm('Xóa bài hát khỏi danh sách phát này?');
+      const ok = window.confirm("Xóa bài hát khỏi danh sách phát này?");
       if (!ok) return;
 
       try {
         const res = await fetch(
           `http://localhost:5001/api/playlists/${playlistId}/songs/${songId}`,
           {
-            method: 'DELETE',
+            method: "DELETE",
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -139,14 +150,14 @@ function PlaylistDetail({ playlistId, onBack, onPlaySong }) {
 
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          throw new Error(data?.error || 'Xóa bài hát thất bại');
+          throw new Error(data?.error || "Xóa bài hát thất bại");
         }
 
         // Gọi GET để làm mới dữ liệu
         await fetchPlaylistDetail();
       } catch (err) {
-        console.error('Error removing song from playlist:', err);
-        alert(err?.message || 'Lỗi khi xóa bài hát');
+        console.error("Error removing song from playlist:", err);
+        alert(err?.message || "Lỗi khi xóa bài hát");
       }
     },
     [fetchPlaylistDetail, playlistId]
@@ -157,7 +168,7 @@ function PlaylistDetail({ playlistId, onBack, onPlaySong }) {
   }
 
   if (!playlistInfo) {
-      return <div className="playlist-loading">Không tìm thấy playlist.</div>;
+    return <div className="playlist-loading">Không tìm thấy playlist.</div>;
   }
 
   return (
@@ -168,23 +179,28 @@ function PlaylistDetail({ playlistId, onBack, onPlaySong }) {
 
       <div className="playlist-detail-header">
         <div className="playlist-detail-cover">
-            <PlaylistCoverCollage
-              images={songs.map((s) => s.imageUrl).slice(0, 4)}
-              fallbackSrc={
-                playlistInfo.coverImage ||
-                'https://placehold.co/300x300/2f2739/ffffff?text=Playlist'
-              }
-              alt={playlistInfo.name}
-            />
+          <PlaylistCoverCollage
+            images={songs.map((s) => s.imageUrl).slice(0, 4)}
+            fallbackSrc={
+              playlistInfo.coverImage ||
+              "https://placehold.co/300x300/2f2739/ffffff?text=Playlist"
+            }
+            alt={playlistInfo.name}
+          />
         </div>
         <div className="playlist-detail-info">
           <h1>{playlistInfo.name}</h1>
-          <p className="playlist-desc">{playlistInfo.description || 'Tạo bởi bạn'}</p>
-          <p className="playlist-meta">
-              {songs.length} bài hát • Cập nhật: {playlistInfo.createdAt ? new Date(playlistInfo.createdAt).toLocaleDateString('vi-VN') : 'N/A'}
+          <p className="playlist-desc">
+            {playlistInfo.description || "Tạo bởi bạn"}
           </p>
-          <button 
-            className="zm-btn play-all-btn" 
+          <p className="playlist-meta">
+            {songs.length} bài hát • Cập nhật:{" "}
+            {playlistInfo.createdAt
+              ? new Date(playlistInfo.createdAt).toLocaleDateString("vi-VN")
+              : "N/A"}
+          </p>
+          <button
+            className="zm-btn play-all-btn"
             onClick={() => songs.length > 0 && onPlaySong(songs[0], songs)}
             disabled={songs.length === 0}
           >
@@ -195,39 +211,56 @@ function PlaylistDetail({ playlistId, onBack, onPlaySong }) {
 
       <div className="playlist-songs-list">
         {songs.length === 0 ? (
-            <div className="no-songs">Playlist này chưa có bài hát nào.</div>
+          <div className="no-songs">Playlist này chưa có bài hát nào.</div>
         ) : (
-            songs.map((song, index) => (
-            <div 
-                className="playlist-song-item" 
-                key={song.id} 
-                onClick={() => onPlaySong(song, songs)}
+          songs.map((song, index) => (
+            <div
+              className="playlist-song-item"
+              key={song.id}
+              onClick={() => onPlaySong(song, songs)}
             >
-                <span className="song-index">{index + 1}</span>
-                <div className="song-main-info">
-                    <img 
-                        src={song.imageUrl} 
-                        alt={song.title} 
-                        className="song-thumb" 
-                        onError={(e) => { e.target.src = 'https://placehold.co/60x60/7a3c9e/ffffff?text=Err'; }}
-                    />
-                    <div className="song-text">
-                        <h4>{song.title}</h4>
-                        <p>{song.artists}</p>
-                    </div>
+              <span className="song-index">{index + 1}</span>
+              <div className="song-main-info">
+                <img
+                  src={song.imageUrl}
+                  alt={song.title}
+                  className="song-thumb"
+                  onError={(e) => {
+                    e.target.src =
+                      "https://placehold.co/60x60/7a3c9e/ffffff?text=Err";
+                  }}
+                />
+                <div className="song-text">
+                  <h4>{song.title}</h4>
+                  <p>{song.artists}</p>
                 </div>
-                <div className="song-actions-right">
-                    <button
-                      className="playlist-song-delete-btn"
-                      title="Xóa khỏi danh sách phát"
-                      aria-label="Xóa khỏi danh sách phát"
-                      onClick={(e) => handleRemoveSongFromPlaylist(song.id, e)}
-                    >
-                      <IoTrashOutline />
-                    </button>
-                </div>
+              </div>
+              <div className="song-actions-right">
+                {String(song.id) === String(currentSong?.id) ? (
+                  <button
+                    className="playlist-song-now-btn"
+                    title={isPlaying ? "Tạm dừng" : "Phát"}
+                    aria-label={isPlaying ? "Tạm dừng" : "Phát"}
+                    onClick={(e) => {
+                      e?.stopPropagation?.();
+                      onTogglePlayPause?.();
+                    }}
+                  >
+                    {isPlaying ? <IoPause /> : <IoPlay />}
+                  </button>
+                ) : (
+                  <button
+                    className="playlist-song-delete-btn"
+                    title="Xóa khỏi danh sách phát"
+                    aria-label="Xóa khỏi danh sách phát"
+                    onClick={(e) => handleRemoveSongFromPlaylist(song.id, e)}
+                  >
+                    <IoTrashOutline />
+                  </button>
+                )}
+              </div>
             </div>
-            ))
+          ))
         )}
       </div>
     </div>
