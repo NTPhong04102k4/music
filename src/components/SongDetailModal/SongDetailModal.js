@@ -1,21 +1,28 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import "./SongDetailModal.css";
 
-function CommentNode({ node, depth = 0 }) {
+function CommentNode({ node, depth = 0, locale, anonymousLabel }) {
   const pad = Math.min(depth, 6) * 14;
   return (
     <div className="comment-node" style={{ marginLeft: pad }}>
       <div className="comment-meta">
-        <span className="comment-user">{node.userName || "User"}</span>
+        <span className="comment-user">{node.userName || anonymousLabel}</span>
         <span className="comment-time">
-          {node.createdAt ? new Date(node.createdAt).toLocaleString("vi-VN") : ""}
+          {node.createdAt ? new Date(node.createdAt).toLocaleString(locale) : ""}
         </span>
       </div>
       <div className="comment-content">{node.content}</div>
       {Array.isArray(node.children) && node.children.length > 0 && (
         <div className="comment-children">
           {node.children.map((c) => (
-            <CommentNode key={c.id} node={c} depth={depth + 1} />
+            <CommentNode
+              key={c.id}
+              node={c}
+              depth={depth + 1}
+              locale={locale}
+              anonymousLabel={anonymousLabel}
+            />
           ))}
         </div>
       )}
@@ -24,6 +31,7 @@ function CommentNode({ node, depth = 0 }) {
 }
 
 function SongDetailModal({ song, onClose }) {
+  const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState("lyrics"); // lyrics | comments
   const [detail, setDetail] = useState(null);
   const [comments, setComments] = useState([]);
@@ -35,6 +43,11 @@ function SongDetailModal({ song, onClose }) {
   const [error, setError] = useState("");
 
   const songId = song?.id;
+
+  const currentLang = (i18n.resolvedLanguage || i18n.language || "vi")
+    .toLowerCase()
+    .split("-")[0];
+  const uiLocale = currentLang === "vi" ? "vi-VN" : "en-US";
 
   const coverUrl = useMemo(() => {
     return (
@@ -63,9 +76,9 @@ function SongDetailModal({ song, onClose }) {
         if (!ok) throw new Error(d?.error || `HTTP ${status}`);
         setDetail(d);
       })
-      .catch((e) => setError(e.message || "Lỗi tải chi tiết"))
+      .catch((e) => setError(e?.message || t("songDetailModal.errors.fetchDetailFailed")))
       .finally(() => setLoadingDetail(false));
-  }, [songId]);
+  }, [songId, t]);
 
   useEffect(() => {
     if (!songId) return;
@@ -99,8 +112,8 @@ function SongDetailModal({ song, onClose }) {
       .finally(() => setLoadingLyrics(false));
   }, [songId, activeTab]);
 
-  const title = detail?.title || song?.title || "Bài hát";
-  const artists = detail?.artists || song?.artists || "Unknown Artist";
+  const title = detail?.title || song?.title || t("songDetailModal.fallbackTitle");
+  const artists = detail?.artists || song?.artists || t("songDetailModal.fallbackArtists");
 
   const lyricsText =
     lyricsMode === "vi"
@@ -127,7 +140,9 @@ function SongDetailModal({ song, onClose }) {
                   <span>▶ {detail.listenCount}</span>
                 </div>
               )}
-              {loadingDetail && <div className="song-detail-subtle">Đang tải...</div>}
+              {loadingDetail && (
+                <div className="song-detail-subtle">{t("common.loading")}</div>
+              )}
               {error && <div className="song-detail-error">{error}</div>}
             </div>
           </div>
@@ -143,14 +158,14 @@ function SongDetailModal({ song, onClose }) {
             className={`tab-btn ${activeTab === "lyrics" ? "active" : ""}`}
             onClick={() => setActiveTab("lyrics")}
           >
-            Lời bài hát
+            {t("songDetailModal.tabs.lyrics")}
           </button>
           <button
             type="button"
             className={`tab-btn ${activeTab === "comments" ? "active" : ""}`}
             onClick={() => setActiveTab("comments")}
           >
-            Bình luận
+            {t("songDetailModal.tabs.comments")}
           </button>
         </div>
 
@@ -163,29 +178,31 @@ function SongDetailModal({ song, onClose }) {
                   className={`pill ${lyricsMode === "original" ? "active" : ""}`}
                   onClick={() => setLyricsMode("original")}
                 >
-                  Gốc
+                  {t("songDetailModal.lyrics.original")}
                 </button>
                 <button
                   type="button"
                   className={`pill ${lyricsMode === "vi" ? "active" : ""}`}
                   onClick={() => setLyricsMode("vi")}
                 >
-                  VI
+                  {t("songDetailModal.lyrics.vi")}
                 </button>
                 <button
                   type="button"
                   className={`pill ${lyricsMode === "en" ? "active" : ""}`}
                   onClick={() => setLyricsMode("en")}
                 >
-                  EN
+                  {t("songDetailModal.lyrics.en")}
                 </button>
               </div>
 
               {loadingLyrics ? (
-                <div className="song-detail-subtle">Đang tải lời bài hát...</div>
+                <div className="song-detail-subtle">
+                  {t("songDetailModal.lyrics.loading")}
+                </div>
               ) : !lyrics.original ? (
                 <div className="song-detail-subtle">
-                  Không tìm thấy lời bài hát cho bài này.
+                  {t("songDetailModal.lyrics.notFound")}
                 </div>
               ) : (
                 <pre className="lyrics-box">{lyricsText || ""}</pre>
@@ -196,13 +213,20 @@ function SongDetailModal({ song, onClose }) {
           {activeTab === "comments" && (
             <div>
               {loadingComments ? (
-                <div className="song-detail-subtle">Đang tải bình luận...</div>
+                <div className="song-detail-subtle">
+                  {t("songDetailModal.comments.loading")}
+                </div>
               ) : comments.length === 0 ? (
-                <div className="song-detail-subtle">Chưa có bình luận.</div>
+                <div className="song-detail-subtle">{t("songDetailModal.comments.empty")}</div>
               ) : (
                 <div className="comment-tree">
                   {comments.map((c) => (
-                    <CommentNode key={c.id} node={c} />
+                    <CommentNode
+                      key={c.id}
+                      node={c}
+                      locale={uiLocale}
+                      anonymousLabel={t("songDetailModal.comments.anonymousUser")}
+                    />
                   ))}
                 </div>
               )}

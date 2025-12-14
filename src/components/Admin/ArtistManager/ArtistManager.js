@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./ArtistManager.css";
+import { useTranslation } from "react-i18next";
 
 function ArtistManager() {
+  const { t } = useTranslation();
   const [artists, setArtists] = useState([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState("");
@@ -32,7 +34,7 @@ function ArtistManager() {
       const token = localStorage.getItem("token");
       if (!token) {
         setArtists([]);
-        setError("Thiếu token. Vui lòng đăng nhập lại.");
+        setError(t("admin.common.missingToken"));
         return;
       }
       const res = await fetch(
@@ -60,17 +62,18 @@ function ArtistManager() {
           setCurrentPage(1);
         } else {
           setArtists([]);
-          setError("Dữ liệu trả về không hợp lệ");
+          setError(t("chartLibrary.errors.invalidData"));
         }
       } else {
         setArtists([]);
         setError(
-          data?.error || `Lỗi khi tải danh sách nghệ sĩ (HTTP ${res.status})`
+          data?.error ||
+            t("admin.artistManager.errors.fetchFailed", { status: res.status })
         );
       }
     } catch (e) {
       console.error("Fetch artists error:", e);
-      setError("Lỗi kết nối server");
+      setError(t("errors.serverConnection"));
     } finally {
       if (opts?.showGlobalLoading) setIsInitialLoading(false);
     }
@@ -132,7 +135,7 @@ function ArtistManager() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa nghệ sĩ này?")) return;
+    if (!window.confirm(t("admin.artistManager.confirms.deleteArtist"))) return;
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`http://localhost:5001/api/admin/artists/${id}`, {
@@ -140,17 +143,21 @@ function ArtistManager() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (!res.ok) return alert(data?.error || "Xóa thất bại");
-      alert(data?.message || "Đã xóa");
+      if (!res.ok)
+        return alert(
+          data?.error || t("admin.artistManager.alerts.deleteFailed")
+        );
+      alert(data?.message || t("admin.artistManager.alerts.deleteSuccess"));
       refreshData(currentPage);
     } catch (e) {
-      alert("Lỗi kết nối server");
+      alert(t("errors.serverConnection"));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return alert("Vui lòng nhập tên nghệ sĩ");
+    if (!form.name.trim())
+      return alert(t("admin.artistManager.alerts.missingName"));
 
     const url = isEditing
       ? `http://localhost:5001/api/admin/artists/${editingId}`
@@ -171,14 +178,17 @@ function ArtistManager() {
         body: fd,
       });
       const data = await res.json();
-      if (!res.ok) return alert(data?.error || "Có lỗi xảy ra");
+      if (!res.ok) return alert(data?.error || t("admin.common.genericError"));
       alert(
-        data?.message || (isEditing ? "Cập nhật thành công" : "Thêm thành công")
+        data?.message ||
+          (isEditing
+            ? t("admin.common.updateSuccess")
+            : t("admin.common.createSuccess"))
       );
       closeModal();
       refreshData(currentPage);
     } catch (e) {
-      alert("Lỗi kết nối server");
+      alert(t("errors.serverConnection"));
     }
   };
 
@@ -192,12 +202,14 @@ function ArtistManager() {
   };
 
   if (isInitialLoading)
-    return <div style={{ padding: 20 }}>Đang tải nghệ sĩ...</div>;
+    return (
+      <div style={{ padding: 20 }}>{t("admin.artistManager.loading")}</div>
+    );
 
   return (
     <div className="artist-manager">
       <div className="manager-header">
-        <h2>Quản Lý Nghệ Sĩ</h2>
+        <h2>{t("admin.artistManager.title")}</h2>
         <div style={{ display: "flex", gap: 10 }}>
           <button
             className="admin-btn"
@@ -208,10 +220,10 @@ function ArtistManager() {
             <span
               className={`reload-spinner ${isRefreshing ? "" : "hidden"}`}
             />
-            ↻ Làm mới
+            ↻ {t("common.refresh")}
           </button>
           <button className="admin-btn btn-primary" onClick={openAdd}>
-            + Thêm Nghệ Sĩ
+            + {t("admin.artistManager.addNew")}
           </button>
         </div>
       </div>
@@ -219,7 +231,7 @@ function ArtistManager() {
       {error && (
         <div className="admin-card" style={{ borderLeft: "4px solid #e35050" }}>
           <div style={{ color: "#e35050", fontWeight: 600, marginBottom: 6 }}>
-            Không tải được dữ liệu
+            {t("admin.common.cannotLoadData")}
           </div>
           <div style={{ color: "#555" }}>{error}</div>
         </div>
@@ -230,10 +242,10 @@ function ArtistManager() {
           <thead>
             <tr>
               <th>ID</th>
-              <th>Ảnh</th>
-              <th>Tên</th>
-              <th>Tiểu sử</th>
-              <th>Hành động</th>
+              <th>{t("admin.artistManager.columns.avatar")}</th>
+              <th>{t("admin.artistManager.columns.name")}</th>
+              <th>{t("admin.artistManager.columns.bio")}</th>
+              <th>{t("admin.artistManager.columns.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -261,13 +273,13 @@ function ArtistManager() {
                     className="admin-btn btn-edit"
                     onClick={() => openEdit(a)}
                   >
-                    Sửa
+                    {t("admin.common.actions.edit")}
                   </button>
                   <button
                     className="admin-btn btn-danger"
                     onClick={() => handleDelete(a.id)}
                   >
-                    Xóa
+                    {t("admin.common.actions.delete")}
                   </button>
                 </td>
               </tr>
@@ -275,7 +287,7 @@ function ArtistManager() {
             {artists.length === 0 && (
               <tr>
                 <td colSpan={5} style={{ padding: 16, color: "#666" }}>
-                  Chưa có nghệ sĩ.
+                  {t("admin.artistManager.empty")}
                 </td>
               </tr>
             )}
@@ -289,11 +301,14 @@ function ArtistManager() {
               disabled={currentPage === 1}
               onClick={() => handlePageChange(currentPage - 1)}
             >
-              Trước
+              {t("chartLibrary.pagination.prev")}
             </button>
 
             <span className="pagination-info">
-              Trang {currentPage} / {totalPages}
+              {t("chartLibrary.pagination.page", {
+                page: currentPage,
+                total: totalPages,
+              })}
             </span>
 
             <button
@@ -301,7 +316,7 @@ function ArtistManager() {
               disabled={currentPage === totalPages}
               onClick={() => handlePageChange(currentPage + 1)}
             >
-              Sau
+              {t("chartLibrary.pagination.next")}
             </button>
           </div>
         )}
@@ -311,7 +326,11 @@ function ArtistManager() {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>{isEditing ? "Cập Nhật Nghệ Sĩ" : "Thêm Nghệ Sĩ"}</h3>
+              <h3>
+                {isEditing
+                  ? t("admin.artistManager.modal.editTitle")
+                  : t("admin.artistManager.modal.createTitle")}
+              </h3>
               <button className="close-btn" type="button" onClick={closeModal}>
                 ×
               </button>
@@ -320,7 +339,8 @@ function ArtistManager() {
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>
-                  Tên nghệ sĩ <span className="required">*</span>
+                  {t("admin.artistManager.form.nameLabel")}{" "}
+                  <span className="required">*</span>
                 </label>
                 <input
                   type="text"
@@ -328,26 +348,26 @@ function ArtistManager() {
                   onChange={(e) =>
                     setForm((p) => ({ ...p, name: e.target.value }))
                   }
-                  placeholder="Nhập tên nghệ sĩ"
+                  placeholder={t("admin.artistManager.form.namePlaceholder")}
                   required
                 />
               </div>
 
               <div className="form-group">
-                <label>Tiểu sử</label>
+                <label>{t("admin.artistManager.form.bioLabel")}</label>
                 <textarea
                   className="artist-textarea"
                   value={form.bio}
                   onChange={(e) =>
                     setForm((p) => ({ ...p, bio: e.target.value }))
                   }
-                  placeholder="Nhập tiểu sử (tuỳ chọn)"
+                  placeholder={t("admin.artistManager.form.bioPlaceholder")}
                   rows={4}
                 />
               </div>
 
               <div className="form-group">
-                <label>Ảnh đại diện</label>
+                <label>{t("admin.artistManager.form.avatarLabel")}</label>
                 <input type="file" accept="image/*" onChange={onFileChange} />
                 {previewUrl && (
                   <div className="artist-preview">
@@ -362,10 +382,12 @@ function ArtistManager() {
                   className="admin-btn btn-secondary"
                   onClick={closeModal}
                 >
-                  Hủy
+                  {t("songDetailPage.actions.cancel")}
                 </button>
                 <button type="submit" className="admin-btn btn-primary">
-                  {isEditing ? "Cập Nhật" : "Thêm Mới"}
+                  {isEditing
+                    ? t("admin.common.actions.update")
+                    : t("admin.common.actions.create")}
                 </button>
               </div>
             </form>

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import "./SongManager.css";
+import { useTranslation } from "react-i18next";
 
 function SongManager() {
+  const { t } = useTranslation();
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false); // Đổi tên từ showAddModal thành showModal cho chung
@@ -85,7 +87,7 @@ function SongManager() {
   };
 
   const handleDeleteSong = (id) => {
-    if (window.confirm("Bạn có chắc muốn xóa bài hát này?")) {
+    if (window.confirm(t("admin.songManager.confirms.deleteSong"))) {
       const token = localStorage.getItem("token");
       fetch(`http://localhost:5001/api/admin/songs/${id}`, {
         method: "DELETE",
@@ -93,20 +95,20 @@ function SongManager() {
       })
         .then((res) => res.json())
         .then((data) => {
-          alert(data.message || "Đã xóa thành công");
+          alert(data.message || t("admin.songManager.alerts.deleteSuccess"));
           fetchSongs(currentPage);
         })
-        .catch((err) => alert("Lỗi khi xóa bài hát"));
+        .catch(() => alert(t("admin.songManager.alerts.deleteFailed")));
     }
   };
 
   const handleUploadLyrics = async () => {
     if (!isEditing || !editingId) {
-      alert("Vui lòng chọn bài hát để cập nhật lyrics");
+      alert(t("admin.songManager.alerts.selectSongToUpdateLyrics"));
       return;
     }
     if (!lyricsFile) {
-      alert("Vui lòng chọn file .lrc");
+      alert(t("admin.songManager.alerts.selectLrcFile"));
       return;
     }
 
@@ -128,12 +130,16 @@ function SongManager() {
       );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data?.error || "Upload lyrics thất bại");
+        throw new Error(
+          data?.error || t("admin.songManager.errors.uploadLyricsFailed")
+        );
       }
-      setLyricsMessage("Đã upload lyrics (LRC) thành công");
+      setLyricsMessage(t("admin.songManager.alerts.uploadLyricsSuccess"));
       setLyricsFile(null);
     } catch (e) {
-      setLyricsMessage(e.message || "Có lỗi khi upload lyrics");
+      setLyricsMessage(
+        e.message || t("admin.songManager.errors.uploadLyricsErrorFallback")
+      );
     } finally {
       setLyricsUploading(false);
     }
@@ -167,7 +173,7 @@ function SongManager() {
     const token = localStorage.getItem("token");
 
     if (!formData.title || !formData.audioUrl) {
-      alert("Vui lòng nhập tên bài hát và đường dẫn nhạc!");
+      alert(t("admin.songManager.alerts.missingRequiredFields"));
       return;
     }
 
@@ -204,15 +210,17 @@ function SongManager() {
       .then((data) => {
         if (data.message || data.id) {
           alert(
-            isEditing ? "Cập nhật thành công!" : "Thêm bài hát thành công!"
+            isEditing
+              ? t("admin.songManager.alerts.updateSuccess")
+              : t("admin.songManager.alerts.createSuccess")
           );
           setShowModal(false);
           fetchSongs(currentPage); // Tải lại danh sách
         } else {
-          alert(data.error || "Có lỗi xảy ra");
+          alert(data.error || t("admin.songManager.errors.genericError"));
         }
       })
-      .catch((err) => alert("Lỗi kết nối server"));
+      .catch(() => alert(t("errors.serverConnection")));
   };
 
   const handleInputChange = (e) => {
@@ -221,7 +229,9 @@ function SongManager() {
   };
 
   if (loading && songs.length === 0)
-    return <div style={{ padding: "20px" }}>Đang tải danh sách bài hát...</div>;
+    return (
+      <div style={{ padding: "20px" }}>{t("admin.songManager.loading")}</div>
+    );
 
   return (
     <div className="song-manager">
@@ -233,9 +243,9 @@ function SongManager() {
           marginBottom: "20px",
         }}
       >
-        <h2>Quản Lý Bài Hát</h2>
+        <h2>{t("admin.songManager.title")}</h2>
         <button className="admin-btn btn-primary" onClick={openAddModal}>
-          + Thêm Bài Hát Mới
+          + {t("admin.songManager.addNew")}
         </button>
       </div>
 
@@ -244,11 +254,11 @@ function SongManager() {
           <thead>
             <tr>
               <th>ID</th>
-              <th>Tên Bài Hát</th>
-              <th>Nghệ Sĩ</th>
-              <th>Lượt Nghe</th>
-              <th>Lượt Thích</th>
-              <th>Hành Động</th>
+              <th>{t("admin.songManager.columns.title")}</th>
+              <th>{t("admin.songManager.columns.artist")}</th>
+              <th>{t("admin.songManager.columns.listens")}</th>
+              <th>{t("admin.songManager.columns.likes")}</th>
+              <th>{t("admin.songManager.columns.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -279,7 +289,7 @@ function SongManager() {
                     {song.title}
                   </div>
                 </td>
-                <td>{song.artists || "Chưa cập nhật"}</td>
+                <td>{song.artists || t("admin.songManager.notUpdated")}</td>
                 <td>{song.listenCount || 0}</td>
                 <td>{song.likeCount || 0}</td>
                 <td>
@@ -288,13 +298,13 @@ function SongManager() {
                     className="admin-btn btn-edit"
                     onClick={() => openEditModal(song)}
                   >
-                    Sửa
+                    {t("admin.songManager.actions.edit")}
                   </button>
                   <button
                     className="admin-btn btn-danger"
                     onClick={() => handleDeleteSong(song.id)}
                   >
-                    Xóa
+                    {t("admin.songManager.actions.delete")}
                   </button>
                 </td>
               </tr>
@@ -309,11 +319,14 @@ function SongManager() {
               disabled={currentPage === 1}
               onClick={() => handlePageChange(currentPage - 1)}
             >
-              Trước
+              {t("chartLibrary.pagination.prev")}
             </button>
 
             <span className="pagination-info">
-              Trang {currentPage} / {totalPages}
+              {t("chartLibrary.pagination.page", {
+                page: currentPage,
+                total: totalPages,
+              })}
             </span>
 
             <button
@@ -321,7 +334,7 @@ function SongManager() {
               disabled={currentPage === totalPages}
               onClick={() => handlePageChange(currentPage + 1)}
             >
-              Sau
+              {t("chartLibrary.pagination.next")}
             </button>
           </div>
         )}
@@ -332,52 +345,56 @@ function SongManager() {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>{isEditing ? "Cập Nhật Bài Hát" : "Thêm Bài Hát Mới"}</h3>
+              <h3>
+                {isEditing
+                  ? t("admin.songManager.modal.editTitle")
+                  : t("admin.songManager.modal.createTitle")}
+              </h3>
               <button onClick={() => setShowModal(false)}>×</button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label>Tên Bài Hát (*)</label>
+                <label>{t("admin.songManager.form.titleLabel")}</label>
                 <input
                   type="text"
                   name="title"
                   value={formData.title}
                   onChange={handleInputChange}
                   required
-                  placeholder="Nhập tên bài hát"
+                  placeholder={t("admin.songManager.form.titlePlaceholder")}
                 />
               </div>
 
               <div className="form-group">
-                <label>Nghệ sĩ (Ca sĩ thể hiện)</label>
+                <label>{t("admin.songManager.form.artistLabel")}</label>
                 <input
                   type="text"
                   name="artist"
                   value={formData.artist}
                   onChange={handleInputChange}
-                  placeholder="Nhập tên ca sĩ (nếu có)"
+                  placeholder={t("admin.songManager.form.artistPlaceholder")}
                 />
               </div>
 
               <div className="form-group">
-                <label>Đường dẫn nhạc (*)</label>
+                <label>{t("admin.songManager.form.audioUrlLabel")}</label>
                 <input
                   type="text"
                   name="audioUrl"
                   value={formData.audioUrl}
                   onChange={handleInputChange}
                   required
-                  placeholder="Link file .mp3 hoặc tên file trong uploads/audio"
+                  placeholder={t("admin.songManager.form.audioUrlPlaceholder")}
                 />
               </div>
               <div className="form-group">
-                <label>Đường dẫn ảnh bìa</label>
+                <label>{t("admin.songManager.form.imageUrlLabel")}</label>
                 <input
                   type="text"
                   name="imageUrl"
                   value={formData.imageUrl}
                   onChange={handleInputChange}
-                  placeholder="Link file ảnh .jpg/.png hoặc tên file"
+                  placeholder={t("admin.songManager.form.imageUrlPlaceholder")}
                 />
               </div>
 
@@ -389,13 +406,13 @@ function SongManager() {
                     onClick={() => setShowLyricsOption((v) => !v)}
                     style={{ width: "fit-content" }}
                   >
-                    Lyrics (tuỳ chọn)
+                    {t("admin.songManager.lyrics.optional")}
                   </button>
 
                   {showLyricsOption && (
                     <div style={{ marginTop: 10 }}>
                       <label style={{ display: "block", marginBottom: 6 }}>
-                        Lyrics Sync (file .lrc)
+                        {t("admin.songManager.lyrics.syncLabel")}
                       </label>
                       <input
                         type="file"
@@ -420,7 +437,9 @@ function SongManager() {
                           onClick={handleUploadLyrics}
                           disabled={lyricsUploading}
                         >
-                          {lyricsUploading ? "Đang upload..." : "Upload LRC"}
+                          {lyricsUploading
+                            ? t("admin.songManager.lyrics.uploading")
+                            : t("admin.songManager.lyrics.uploadButton")}
                         </button>
                         {lyricsMessage ? (
                           <div style={{ fontSize: 12, opacity: 0.9 }}>
@@ -431,8 +450,7 @@ function SongManager() {
                       <div
                         style={{ fontSize: 12, opacity: 0.75, marginTop: 6 }}
                       >
-                        Nếu không upload LRC thì trang chi tiết sẽ chỉ hiển thị
-                        lyrics thường (không sync).
+                        {t("admin.songManager.lyrics.note")}
                       </div>
                     </div>
                   )}
@@ -444,10 +462,12 @@ function SongManager() {
                   className="admin-btn btn-secondary"
                   onClick={() => setShowModal(false)}
                 >
-                  Hủy
+                  {t("songDetailPage.actions.cancel")}
                 </button>
                 <button type="submit" className="admin-btn btn-primary">
-                  {isEditing ? "Cập Nhật" : "Thêm Mới"}
+                  {isEditing
+                    ? t("admin.songManager.modal.updateButton")
+                    : t("admin.songManager.modal.createButton")}
                 </button>
               </div>
             </form>

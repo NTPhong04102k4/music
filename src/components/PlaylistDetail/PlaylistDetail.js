@@ -1,6 +1,16 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./PlaylistDetail.css";
 import { IoArrowBack, IoPause, IoPlay, IoTrashOutline } from "react-icons/io5";
+import { useTranslation } from "react-i18next";
+
+function shuffleArray(input) {
+  const arr = Array.isArray(input) ? [...input] : [];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
 function PlaylistCoverCollage({ images = [], fallbackSrc, alt }) {
   const list = Array.isArray(images) ? images.filter(Boolean).slice(0, 4) : [];
@@ -83,28 +93,39 @@ function PlaylistDetail({
   isPlaying,
   onTogglePlayPause,
 }) {
+  const { t, i18n } = useTranslation();
+  const BACKEND_URL =
+    process.env.REACT_APP_BACKEND_URL || "http://localhost:5001";
+
+  const currentLang = (i18n.resolvedLanguage || i18n.language || "vi")
+    .toLowerCase()
+    .split("-")[0];
+  const dateLocale = currentLang === "en" ? "en-US" : "vi-VN";
+
   const [playlistInfo, setPlaylistInfo] = useState(null);
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchPlaylistDetail = useCallback(async () => {
     const token = localStorage.getItem("token");
-    if (!token || !playlistId) return;
+    if (!playlistId || !token) {
+      setPlaylistInfo(null);
+      setSongs([]);
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     try {
-      const res = await fetch(
-        `http://localhost:5001/api/playlists/${playlistId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`${BACKEND_URL}/api/playlists/${playlistId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data?.error || "Không thể tải playlist");
+        throw new Error(data?.error || t("playlistDetail.errors.fetchFailed"));
       }
 
       const { songs: fetchedSongs, ...info } = data || {};
@@ -117,11 +138,17 @@ function PlaylistDetail({
     } finally {
       setLoading(false);
     }
-  }, [playlistId]);
+  }, [playlistId, BACKEND_URL, t]);
 
   useEffect(() => {
     fetchPlaylistDetail();
   }, [fetchPlaylistDetail]);
+
+  const handlePlayRandom = useCallback(() => {
+    if (!Array.isArray(songs) || songs.length === 0) return;
+    const shuffled = shuffleArray(songs);
+    onPlaySong?.(shuffled[0], shuffled);
+  }, [onPlaySong, songs]);
 
   const handleRemoveSongFromPlaylist = useCallback(
     async (songId, e) => {
@@ -130,11 +157,11 @@ function PlaylistDetail({
       if (!playlistId || !songId) return;
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("Vui lòng đăng nhập để xóa bài hát khỏi playlist");
+        alert(t("playlistDetail.alerts.loginToRemove"));
         return;
       }
 
-      const ok = window.confirm("Xóa bài hát khỏi danh sách phát này?");
+      const ok = window.confirm(t("playlistDetail.confirms.removeSong"));
       if (!ok) return;
 
       try {
@@ -150,31 +177,35 @@ function PlaylistDetail({
 
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          throw new Error(data?.error || "Xóa bài hát thất bại");
+          throw new Error(
+            data?.error || t("playlistDetail.errors.removeFailed")
+          );
         }
 
         // Gọi GET để làm mới dữ liệu
         await fetchPlaylistDetail();
       } catch (err) {
         console.error("Error removing song from playlist:", err);
-        alert(err?.message || "Lỗi khi xóa bài hát");
+        alert(err?.message || t("playlistDetail.errors.removeErrorFallback"));
       }
     },
-    [fetchPlaylistDetail, playlistId]
+    [fetchPlaylistDetail, playlistId, t]
   );
 
   if (loading) {
-    return <div className="playlist-loading">Đang tải...</div>;
+    return <div className="playlist-loading">{t("common.loading")}</div>;
   }
 
   if (!playlistInfo) {
-    return <div className="playlist-loading">Không tìm thấy playlist.</div>;
+    return (
+      <div className="playlist-loading">{t("playlistDetail.notFound")}</div>
+    );
   }
 
   return (
     <div className="playlist-detail">
       <button className="back-btn" onClick={onBack}>
-        <IoArrowBack /> Trở lại
+        <IoArrowBack /> {t("common.back")}
       </button>
 
       <div className="playlist-detail-header">
@@ -191,32 +222,33 @@ function PlaylistDetail({
         <div className="playlist-detail-info">
           <h1>{playlistInfo.name}</h1>
           <p className="playlist-desc">
-            {playlistInfo.description || "Tạo bởi bạn"}
+            {playlistInfo.description || t("playlistLibrary.createdByYou")}
           </p>
           <p className="playlist-meta">
-            {songs.length} bài hát • Cập nhật:{" "}
+            {t("playlistDetail.songsCount", { count: songs.length })} •{" "}
+            {t("playlistDetail.updatedLabel")}{" "}
             {playlistInfo.createdAt
-              ? new Date(playlistInfo.createdAt).toLocaleDateString("vi-VN")
+              ? new Date(playlistInfo.createdAt).toLocaleDateString(dateLocale)
               : "N/A"}
           </p>
           <button
             className="zm-btn play-all-btn"
-            onClick={() => songs.length > 0 && onPlaySong(songs[0], songs)}
+            onClick={handlePlayRandom}
             disabled={songs.length === 0}
           >
-            <IoPlay /> PHÁT NGẪU NHIÊN
+            <IoPlay /> {t("playlistDetail.shufflePlay")}
           </button>
         </div>
       </div>
 
       <div className="playlist-songs-list">
         {songs.length === 0 ? (
-          <div className="no-songs">Playlist này chưa có bài hát nào.</div>
+          <div className="no-songs">{t("playlistDetail.empty")}</div>
         ) : (
           songs.map((song, index) => (
             <div
               className="playlist-song-item"
-              key={song.id}
+              key={song.id || song.songId || song._id || `${index}`}
               onClick={() => onPlaySong(song, songs)}
             >
               <span className="song-index">{index + 1}</span>
@@ -239,8 +271,16 @@ function PlaylistDetail({
                 {String(song.id) === String(currentSong?.id) ? (
                   <button
                     className="playlist-song-now-btn"
-                    title={isPlaying ? "Tạm dừng" : "Phát"}
-                    aria-label={isPlaying ? "Tạm dừng" : "Phát"}
+                    title={
+                      isPlaying
+                        ? t("favoritesLibrary.tooltips.pause")
+                        : t("favoritesLibrary.tooltips.play")
+                    }
+                    aria-label={
+                      isPlaying
+                        ? t("favoritesLibrary.tooltips.pause")
+                        : t("favoritesLibrary.tooltips.play")
+                    }
                     onClick={(e) => {
                       e?.stopPropagation?.();
                       onTogglePlayPause?.();
@@ -251,8 +291,8 @@ function PlaylistDetail({
                 ) : (
                   <button
                     className="playlist-song-delete-btn"
-                    title="Xóa khỏi danh sách phát"
-                    aria-label="Xóa khỏi danh sách phát"
+                    title={t("playlistDetail.tooltips.removeFromPlaylist")}
+                    aria-label={t("playlistDetail.tooltips.removeFromPlaylist")}
                     onClick={(e) => handleRemoveSongFromPlaylist(song.id, e)}
                   >
                     <IoTrashOutline />

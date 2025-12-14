@@ -47,6 +47,8 @@ function SettingsMenu() {
           isOpen ? "active" : ""
         }`}
         onClick={() => setIsOpen(!isOpen)}
+        aria-label={t("settings.openSettings")}
+        title={t("settings.openSettings")}
       >
         <IoSettingsOutline />
       </button>

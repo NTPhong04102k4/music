@@ -16,6 +16,7 @@
     "login": "Đăng nhập"
   },
   "settings": {
+    "openSettings": "Cài đặt",
     "language": "Ngôn ngữ",
     "helpSupport": "Hướng dẫn và hỗ trợ",
     "feedback": "Góp ý"
@@ -27,8 +28,13 @@
   "common": {
     "or": "hoặc",
     "close": "Đóng",
+    "show": "Hiện",
+    "hide": "Ẩn",
     "loading": "Đang tải...",
     "back": "Quay lại",
+    "refresh": "LÀM MỚI",
+    "viewAll": "Xem tất cả",
+    "more": "Khác",
     "notAvailable": "N/A"
   },
   "errors": {
@@ -89,6 +95,7 @@
     "badge": "MEMBER VIP",
     "currentPlan": {
       "title": "Gói bạn đang dùng",
+      "defaultPlanName": "Premium",
       "daysLeft_one": "Còn {{count}} ngày",
       "daysLeft_other": "Còn {{count}} ngày",
       "expiry": "Hết hạn: {{date}}",
@@ -121,13 +128,20 @@
       "changePlanFailed": "Chuyển gói thất bại",
       "changedFree": "Đã chuyển gói (miễn phí).",
       "downgradeWindowOnly": "Bạn chỉ được hạ gói trong 7 ngày đầu kể từ ngày đăng ký tài khoản."
+    },
+    "errors": {
+      "loadPackagesFailed": "Lỗi tải gói cước",
+      "missingOnBuyProp": "Lỗi: Prop 'onBuy' chưa được truyền vào VipUpgrade!"
     }
   },
   "playlist": {
     "addToPlaylist": {
       "title": "Thêm vào Playlist",
       "chooseToAdd": "Chọn playlist để thêm bài hát:",
-      "empty": "Bạn chưa có playlist nào."
+      "empty": "Bạn chưa có playlist nào.",
+      "errors": {
+        "songAlreadyInPlaylist": "Bài hát đã có trong playlist"
+      }
     }
   },
   "albumDetail": {
@@ -164,6 +178,530 @@
     "errors": {
       "fetchFailed": "Lỗi tải nghệ sĩ (HTTP {{status}})",
       "invalidArtistId": "artistId không hợp lệ"
+    }
+  },
+  "artistLibrary": {
+    "title": "Tất Cả Nghệ Sĩ",
+    "loading": "Đang tải nghệ sĩ...",
+    "pagination": {
+      "prev": "Trước",
+      "next": "Sau"
+    },
+    "errors": {
+      "fetchFailed": "Lỗi tải nghệ sĩ (HTTP {{status}})"
+    }
+  },
+  "favoritesLibrary": {
+    "title": "Bài Hát Yêu Thích",
+    "playAllButton": "PHÁT TẤT CẢ",
+    "playAllTitle": "Phát tất cả",
+    "playAllTitleEmpty": "Chưa có bài hát để phát",
+    "empty": "Chưa có bài hát yêu thích nào.",
+    "tooltips": {
+      "play": "Phát",
+      "pause": "Tạm dừng",
+      "remove": "Xóa khỏi yêu thích"
+    },
+    "alerts": {
+      "loginToRemove": "Vui lòng đăng nhập để xóa bài hát khỏi yêu thích"
+    },
+    "confirms": {
+      "remove": "Xóa bài hát khỏi danh sách yêu thích?"
+    },
+    "errors": {
+      "fetchFailed": "Không thể tải danh sách yêu thích",
+      "removeFailed": "Xóa khỏi yêu thích thất bại",
+      "removeErrorFallback": "Lỗi khi xóa bài hát khỏi yêu thích"
+    }
+  },
+  "genreDetail": {
+    "title": "Chi Tiết Thể Loại",
+    "loading": "Đang tải thể loại...",
+    "emptyDescription": "Chưa có mô tả.",
+    "songCountLabel": "bài hát",
+    "playAll": "Phát tất cả",
+    "songsTitle": "Bài hát",
+    "emptySongs": "Chưa có bài hát.",
+    "errors": {
+      "fetchFailed": "Lỗi tải thể loại (HTTP {{status}})",
+      "invalidGenreId": "genreId không hợp lệ"
+    }
+  },
+  "genreLibrary": {
+    "title": "Tất Cả Thể Loại",
+    "loading": "Đang tải thể loại...",
+    "songCountShortLabel": "bài",
+    "pagination": {
+      "prev": "Trước",
+      "next": "Sau"
+    },
+    "errors": {
+      "fetchFailed": "Lỗi tải thể loại (HTTP {{status}})"
+    }
+  },
+  "invoiceDetail": {
+    "loading": "Đang tải chi tiết...",
+    "notFound": "Không tìm thấy hóa đơn.",
+    "backToList": "Quay lại danh sách",
+    "title": "Chi Tiết Hóa Đơn #{{id}}",
+    "status": {
+      "success": "Thành công",
+      "processing": "Đang xử lý"
+    },
+    "transactionTime": "Thời gian giao dịch",
+    "serviceDetails": "Chi tiết dịch vụ",
+    "defaultServiceName": "Dịch vụ VIP",
+    "totalPayment": "Tổng thanh toán"
+  },
+  "playlistLibrary": {
+    "title": "Danh Sách Phát",
+    "createPlaylist": "TẠO PLAYLIST",
+    "empty": "Bạn chưa có danh sách phát nào.",
+    "createdByYou": "Tạo bởi bạn",
+    "createModal": {
+      "title": "Tạo Playlist Mới",
+      "namePlaceholder": "Nhập tên playlist",
+      "descPlaceholder": "Mô tả (tùy chọn)",
+      "submit": "TẠO MỚI"
+    },
+    "alerts": {
+      "loginRequired": "Vui lòng đăng nhập để tạo playlist!",
+      "createFailed": "Lỗi khi tạo playlist"
+    }
+  },
+  "playlistQueue": {
+    "title": "Danh sách phát",
+    "nowPlaying": "Đang phát",
+    "upNext": "Tiếp theo",
+    "empty": "Danh sách trống"
+  },
+  "songActionModal": {
+    "stats": {
+      "likes": "Lượt thích",
+      "listens": "Lượt nghe"
+    },
+    "actions": {
+      "addToFavorites": "Thêm vào bài hát yêu thích",
+      "removeFromFavorites": "Xóa khỏi bài hát yêu thích",
+      "addToPlaylist": "Thêm vào danh sách phát"
+    }
+  },
+  "songDetailModal": {
+    "tabs": {
+      "lyrics": "Lời bài hát",
+      "comments": "Bình luận"
+    },
+    "lyrics": {
+      "original": "Gốc",
+      "vi": "VI",
+      "en": "EN",
+      "loading": "Đang tải lời bài hát...",
+      "notFound": "Không tìm thấy lời bài hát cho bài này."
+    },
+    "comments": {
+      "loading": "Đang tải bình luận...",
+      "empty": "Chưa có bình luận.",
+      "anonymousUser": "User"
+    },
+    "fallbackTitle": "Bài hát",
+    "fallbackArtists": "Nghệ sĩ không xác định",
+    "errors": {
+      "fetchDetailFailed": "Lỗi tải chi tiết"
+    }
+  },
+  "songDetailPage": {
+    "title": "Chi tiết bài hát",
+    "actions": {
+      "refresh": "Làm mới",
+      "cancel": "Hủy"
+    },
+    "lyrics": {
+      "syncBadge": "SYNC",
+      "notFound": "Không tìm thấy lời bài hát.",
+      "seekHint": "Click để tua"
+    },
+    "comments": {
+      "reply": "Trả lời",
+      "replyingTo": "Đang trả lời:",
+      "directHint": "Bình luận trực tiếp vào bài hát.",
+      "placeholder": "Nhập bình luận...",
+      "send": "Gửi",
+      "loginRequired": "Vui lòng đăng nhập để bình luận",
+      "sendFailed": "Lỗi gửi bình luận"
+    },
+    "errors": {
+      "fetchFailed": "Lỗi tải dữ liệu"
+    }
+  },
+  "userMenu": {
+    "avatarAlt": "Ảnh đại diện",
+    "accountInfo": "Thông tin tài khoản",
+    "transactionHistory": "Lịch sử giao dịch",
+    "changePassword": "Đổi mật khẩu",
+    "logout": "Đăng xuất",
+    "login": "Đăng nhập",
+    "register": "Đăng ký"
+  },
+  "userProfile": {
+    "title": "Thông Tin Tài Khoản",
+    "loadingProfile": "Đang tải thông tin...",
+    "changeAvatar": "Đổi ảnh đại diện",
+    "vipBadge": "VIP",
+    "stats": {
+      "playlists": "Playlist",
+      "favorites": "Yêu thích"
+    },
+    "labels": {
+      "displayName": "Tên hiển thị",
+      "username": "Tên đăng nhập",
+      "email": "Email",
+      "subscription": "Gói dịch vụ"
+    },
+    "notUpdated": "Chưa cập nhật",
+    "subscription": {
+      "daysLeft_one": "Còn lại: {{count}} ngày",
+      "daysLeft_other": "Còn lại: {{count}} ngày"
+    },
+    "alerts": {
+      "invalidImageFile": "Vui lòng chọn file ảnh!",
+      "avatarUpdated": "Cập nhật ảnh đại diện thành công!",
+      "avatarUploadFailed": "Lỗi khi upload ảnh"
+    }
+  },
+  "playerControls": {
+    "songCoverAlt": "Ảnh bìa bài hát",
+    "noSongSelected": "Chọn bài hát",
+    "unknownArtist": "Nghệ sĩ",
+    "tooltips": {
+      "doubleClickToViewDetail": "Double click để xem chi tiết",
+      "addToFavorites": "Thêm vào yêu thích",
+      "removeFromFavorites": "Bỏ yêu thích",
+      "more": "Khác"
+    },
+    "lyrics": {
+      "title": "Lời bài hát",
+      "placeholder": "Lời bài hát sẽ được hiển thị ở đây..."
+    }
+  },
+  "payment": {
+    "backToPlans": "Quay lại chọn gói",
+    "chooseMethod": "Chọn phương thức thanh toán",
+    "methods": {
+      "creditCard": "Thẻ tín dụng / Thẻ ghi nợ",
+      "shopeePay": "Ví ShopeePay",
+      "zaloPay": "Ví ZaloPay",
+      "vnpayQr": "Thanh toán qua VNPAY QR Code"
+    },
+    "creditCard": {
+      "chooseCard": "Chọn thẻ:",
+      "newCard": "Thẻ mới",
+      "autoPayNextCycle": "Tự động thanh toán cho chu kì tiếp theo"
+    },
+    "order": {
+      "title": "Thông tin đơn hàng",
+      "subtitle": "Bạn đang chọn gói VIP sau:",
+      "packageLabel": "Gói VIP:",
+      "amount": "Số tiền:",
+      "total": "Thành tiền:"
+    },
+    "processing": "Đang xử lý...",
+    "payNow": "THANH TOÁN",
+    "unknownError": "Không xác định",
+    "alerts": {
+      "missingPackageInfo": "Lỗi: Không tìm thấy thông tin gói cước.",
+      "success": "Thanh toán thành công!",
+      "failed": "Lỗi thanh toán: {{error}}"
+    }
+  },
+  "app": {
+    "alerts": {
+      "vipUpgradeThanks": "Cảm ơn bạn đã nâng cấp VIP!",
+      "loginRequired": "Vui lòng đăng nhập để sử dụng tính năng này",
+      "noPermission": "Không có quyền",
+      "socialAccountCannotChangePassword": "Tài khoản Google/Facebook không thể đổi mật khẩu tại đây",
+      "addToPlaylistSuccess": "Đã thêm bài hát vào playlist thành công!",
+      "addToPlaylistFailed": "Lỗi khi thêm bài hát"
+    }
+  },
+  "playlistDetail": {
+    "notFound": "Không tìm thấy playlist.",
+    "updatedLabel": "Cập nhật:",
+    "shufflePlay": "PHÁT NGẪU NHIÊN",
+    "empty": "Playlist này chưa có bài hát nào.",
+    "songsCount_one": "{{count}} bài hát",
+    "songsCount_other": "{{count}} bài hát",
+    "tooltips": {
+      "removeFromPlaylist": "Xóa khỏi danh sách phát"
+    },
+    "alerts": {
+      "loginToRemove": "Vui lòng đăng nhập để xóa bài hát khỏi playlist"
+    },
+    "confirms": {
+      "removeSong": "Xóa bài hát khỏi danh sách phát này?"
+    },
+    "errors": {
+      "fetchFailed": "Không thể tải playlist",
+      "removeFailed": "Xóa bài hát thất bại",
+      "removeErrorFallback": "Lỗi khi xóa bài hát"
+    }
+  },
+  "listenHistory": {
+    "title": "Nghe Gần Đây",
+    "playAllButton": "PHÁT TẤT CẢ",
+    "playAllTitle": "Phát tất cả",
+    "playAllTitleEmpty": "Chưa có bài hát để phát",
+    "loading": "Đang tải lịch sử...",
+    "empty": "Bạn chưa nghe bài hát nào gần đây.",
+    "time": {
+      "justNow": "Vừa xong",
+      "minutesAgo_one": "{{count}} phút trước",
+      "minutesAgo_other": "{{count}} phút trước",
+      "hoursAgo_one": "{{count}} giờ trước",
+      "hoursAgo_other": "{{count}} giờ trước",
+      "daysAgo_one": "{{count}} ngày trước",
+      "daysAgo_other": "{{count}} ngày trước"
+    },
+    "errors": {
+      "loginRequired": "Vui lòng đăng nhập để xem lịch sử nghe.",
+      "fetchFailed": "Không thể tải lịch sử nghe. Vui lòng thử lại."
+    }
+  },
+  "invoiceHistory": {
+    "loading": "Đang tải lịch sử giao dịch...",
+    "title": "Lịch Sử Giao Dịch",
+    "empty": "Bạn chưa có giao dịch nào.",
+    "itemTitle": "Thanh toán dịch vụ"
+  },
+  "mainContent": {
+    "suggestions": {
+      "title": "Gợi Ý Bài Hát"
+    },
+    "charts": {
+      "title": "Bảng Xếp Hạng Nhạc",
+      "seeAll": "TẤT CẢ",
+      "tabs": {
+        "all": "TẤT CẢ",
+        "vn": "NHẠC VIỆT",
+        "foreign": "NHẠC NGOẠI"
+      }
+    },
+    "partners": {
+      "title": "Đối Tác Âm Nhạc"
+    },
+    "artists": {
+      "title": "Nghệ Sĩ"
+    },
+    "genres": {
+      "title": "Thể Loại",
+      "songCountShort": "{{count}} bài"
+    }
+  },
+  "chartLibrary": {
+    "loading": "Đang tải bảng xếp hạng...",
+    "title": "Tất Cả Bảng Xếp Hạng",
+    "empty": "Chưa có dữ liệu.",
+    "errors": {
+      "fetchFailed": "Lỗi tải bảng xếp hạng (HTTP {{status}})",
+      "invalidData": "Dữ liệu trả về không hợp lệ"
+    },
+    "pagination": {
+      "prev": "Trước",
+      "next": "Sau",
+      "page": "Trang {{page}} / {{total}}"
+    }
+  },
+  "admin": {
+    "layout": {
+      "brand": "Music Admin",
+      "dashboard": "Tổng Quan",
+      "songs": "Quản Lý Bài Hát",
+      "albums": "Quản Lý Album",
+      "artists": "Quản Lý Nghệ Sĩ",
+      "users": "Quản Lý Người Dùng",
+      "logout": "Đăng Xuất",
+      "systemAdmin": "Quản Trị Hệ Thống",
+      "admin": "Admin"
+    },
+    "common": {
+      "missingToken": "Thiếu token. Vui lòng đăng nhập lại.",
+      "genericError": "Có lỗi xảy ra",
+      "createSuccess": "Thêm thành công",
+      "updateSuccess": "Cập nhật thành công",
+      "cannotLoadData": "Không tải được dữ liệu",
+      "actions": {
+        "edit": "Sửa",
+        "delete": "Xóa",
+        "create": "Thêm Mới",
+        "update": "Cập Nhật"
+      }
+    },
+    "dashboard": {
+      "title": "Tổng Quan",
+      "totalSongs": "Bài Hát",
+      "totalAlbums": "Album",
+      "totalUsers": "Người Dùng",
+      "totalRevenue": "Doanh Thu",
+      "revenueByMonth": "Doanh thu theo tháng",
+      "newUsersByMonth": "Người dùng mới theo tháng",
+      "last12Months": "12 tháng gần nhất",
+      "revenueLabel": "Doanh thu (VND)",
+      "newUsersLabel": "Người dùng mới"
+    },
+    "userManager": {
+      "title": "Quản Lý Người Dùng",
+      "loading": "Đang tải danh sách người dùng...",
+      "columns": {
+        "username": "Tên Đăng Nhập",
+        "email": "Email",
+        "joinDate": "Ngày Tham Gia",
+        "status": "Trạng Thái",
+        "actions": "Hành Động"
+      },
+      "status": {
+        "active": "Hoạt động",
+        "banned": "Bị khóa"
+      },
+      "actions": {
+        "lock": "Khóa",
+        "unlock": "Mở khóa"
+      },
+      "confirms": {
+        "toggleStatus": "Bạn có chắc muốn {{action}} tài khoản {{username}}?"
+      },
+      "alerts": {
+        "updateStatusSuccess": "Cập nhật trạng thái thành công!",
+        "updateStatusFailed": "Lỗi khi cập nhật trạng thái"
+      }
+    },
+    "songManager": {
+      "title": "Quản Lý Bài Hát",
+      "loading": "Đang tải danh sách bài hát...",
+      "addNew": "Thêm Bài Hát Mới",
+      "notUpdated": "Chưa cập nhật",
+      "columns": {
+        "title": "Tên Bài Hát",
+        "artist": "Nghệ Sĩ",
+        "listens": "Lượt Nghe",
+        "likes": "Lượt Thích",
+        "actions": "Hành Động"
+      },
+      "actions": {
+        "edit": "Sửa",
+        "delete": "Xóa"
+      },
+      "confirms": {
+        "deleteSong": "Bạn có chắc muốn xóa bài hát này?"
+      },
+      "alerts": {
+        "deleteSuccess": "Đã xóa thành công",
+        "deleteFailed": "Lỗi khi xóa bài hát",
+        "selectSongToUpdateLyrics": "Vui lòng chọn bài hát để cập nhật lyrics",
+        "selectLrcFile": "Vui lòng chọn file .lrc",
+        "uploadLyricsSuccess": "Đã upload lyrics (LRC) thành công",
+        "missingRequiredFields": "Vui lòng nhập tên bài hát và đường dẫn nhạc!",
+        "createSuccess": "Thêm bài hát thành công!",
+        "updateSuccess": "Cập nhật thành công!"
+      },
+      "errors": {
+        "uploadLyricsFailed": "Upload lyrics thất bại",
+        "uploadLyricsErrorFallback": "Có lỗi khi upload lyrics",
+        "genericError": "Có lỗi xảy ra"
+      },
+      "modal": {
+        "createTitle": "Thêm Bài Hát Mới",
+        "editTitle": "Cập Nhật Bài Hát",
+        "createButton": "Thêm Mới",
+        "updateButton": "Cập Nhật"
+      },
+      "form": {
+        "titleLabel": "Tên Bài Hát (*)",
+        "titlePlaceholder": "Nhập tên bài hát",
+        "artistLabel": "Nghệ sĩ (Ca sĩ thể hiện)",
+        "artistPlaceholder": "Nhập tên ca sĩ (nếu có)",
+        "audioUrlLabel": "Đường dẫn nhạc (*)",
+        "audioUrlPlaceholder": "Link file .mp3 hoặc tên file trong uploads/audio",
+        "imageUrlLabel": "Đường dẫn ảnh bìa",
+        "imageUrlPlaceholder": "Link file ảnh .jpg/.png hoặc tên file"
+      },
+      "lyrics": {
+        "optional": "Lyrics (tuỳ chọn)",
+        "syncLabel": "Lyrics Sync (file .lrc)",
+        "uploadButton": "Upload LRC",
+        "uploading": "Đang upload...",
+        "note": "Nếu không upload LRC thì trang chi tiết sẽ chỉ hiển thị lyrics thường (không sync)."
+      }
+    },
+    "albumManager": {
+      "title": "Quản Lý Album",
+      "loading": "Đang tải album...",
+      "addNew": "Thêm Album",
+      "empty": "Chưa có album.",
+      "columns": {
+        "cover": "Ảnh bìa",
+        "title": "Tiêu đề",
+        "artists": "Nghệ sĩ",
+        "releaseDate": "Ngày phát hành",
+        "actions": "Hành động"
+      },
+      "confirms": {
+        "deleteAlbum": "Bạn có chắc muốn xóa album này?"
+      },
+      "alerts": {
+        "deleteSuccess": "Đã xóa",
+        "deleteFailed": "Xóa thất bại",
+        "missingTitle": "Vui lòng nhập tên album"
+      },
+      "errors": {
+        "fetchFailed": "Lỗi khi tải danh sách album (HTTP {{status}})"
+      },
+      "modal": {
+        "createTitle": "Thêm Album",
+        "editTitle": "Cập Nhật Album"
+      },
+      "form": {
+        "titleLabel": "Tên album",
+        "titlePlaceholder": "Nhập tên album",
+        "releaseDateLabel": "Ngày phát hành",
+        "coverLabel": "Ảnh bìa (upload từ máy)",
+        "artistsLabel": "Nghệ sĩ",
+        "noArtistsHint": "Chưa có nghệ sĩ. Hãy thêm nghệ sĩ trước.",
+        "noArtistsSelected": "Chưa chọn nghệ sĩ.",
+        "searchArtistPlaceholder": "Tìm nghệ sĩ theo tên..."
+      }
+    },
+    "artistManager": {
+      "title": "Quản Lý Nghệ Sĩ",
+      "loading": "Đang tải nghệ sĩ...",
+      "addNew": "Thêm Nghệ Sĩ",
+      "empty": "Chưa có nghệ sĩ.",
+      "columns": {
+        "avatar": "Ảnh",
+        "name": "Tên",
+        "bio": "Tiểu sử",
+        "actions": "Hành động"
+      },
+      "confirms": {
+        "deleteArtist": "Bạn có chắc muốn xóa nghệ sĩ này?"
+      },
+      "alerts": {
+        "deleteSuccess": "Đã xóa",
+        "deleteFailed": "Xóa thất bại",
+        "missingName": "Vui lòng nhập tên nghệ sĩ"
+      },
+      "errors": {
+        "fetchFailed": "Lỗi khi tải danh sách nghệ sĩ (HTTP {{status}})"
+      },
+      "modal": {
+        "createTitle": "Thêm Nghệ Sĩ",
+        "editTitle": "Cập Nhật Nghệ Sĩ"
+      },
+      "form": {
+        "nameLabel": "Tên nghệ sĩ",
+        "namePlaceholder": "Nhập tên nghệ sĩ",
+        "bioLabel": "Tiểu sử",
+        "bioPlaceholder": "Nhập tiểu sử (tuỳ chọn)",
+        "avatarLabel": "Ảnh đại diện"
+      }
     }
   }
 }

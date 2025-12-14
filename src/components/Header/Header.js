@@ -22,6 +22,8 @@ function Header({
   const [isSearchActive, setIsSearchActive] = useState(false);
   const searchRef = useRef(null);
   const { t } = useTranslation();
+  const BACKEND_URL =
+    process.env.REACT_APP_BACKEND_URL || "http://localhost:5001";
 
   // Search Effect
   useEffect(() => {
@@ -30,15 +32,15 @@ function Header({
       return;
     }
     const delayDebounceFn = setTimeout(() => {
-      fetch(`http://localhost:5001/api/search?q=${searchTerm}`)
+      fetch(`${BACKEND_URL}/api/search?q=${encodeURIComponent(searchTerm)}`)
         .then((res) => res.json())
         .then((data) => {
           setSearchResults(data);
         })
-        .catch((err) => console.error("Lỗi tìm kiếm:", err));
+        .catch((err) => console.error("Search error:", err));
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm]);
+  }, [searchTerm, BACKEND_URL]);
 
   const handleResultClick = (song) => {
     onPlaySong(song, [song]);

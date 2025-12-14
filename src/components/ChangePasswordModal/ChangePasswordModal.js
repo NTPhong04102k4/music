@@ -60,7 +60,12 @@ function ChangePasswordModal({ onClose, onSuccess }) {
   return (
     <div className="cpm-overlay" onClick={onClose}>
       <div className="cpm-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="cpm-close" onClick={onClose} type="button">
+        <button
+          className="cpm-close"
+          onClick={onClose}
+          type="button"
+          aria-label={t("common.close")}
+        >
           <IoClose />
         </button>
 

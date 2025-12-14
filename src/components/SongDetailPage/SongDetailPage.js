@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./SongDetailPage.css";
 import { IoChevronBack, IoSend } from "react-icons/io5";
+import { useTranslation } from "react-i18next";
 
 function parseLrc(lrcText) {
   const input = String(lrcText || "");
@@ -40,35 +41,52 @@ function buildTree(flat) {
   const byId = new Map();
   const roots = [];
   for (const r of flat) {
-    byId.set(r.id, { ...r, children: Array.isArray(r.children) ? r.children : [] });
+    byId.set(r.id, {
+      ...r,
+      children: Array.isArray(r.children) ? r.children : [],
+    });
   }
   for (const r of flat) {
     const node = byId.get(r.id);
-    if (node.parentId && byId.has(node.parentId)) byId.get(node.parentId).children.push(node);
+    if (node.parentId && byId.has(node.parentId))
+      byId.get(node.parentId).children.push(node);
     else roots.push(node);
   }
   return roots;
 }
 
-function CommentItem({ node, onReply }) {
+function CommentItem({ node, onReply, locale, anonymousLabel, replyLabel }) {
   return (
     <div className="sdp-comment">
       <div className="sdp-comment-meta">
-        <span className="sdp-user">{node.userName || "User"}</span>
+        <span className="sdp-user">{node.userName || anonymousLabel}</span>
         <span className="sdp-time">
-          {node.createdAt ? new Date(node.createdAt).toLocaleString("vi-VN") : ""}
+          {node.createdAt
+            ? new Date(node.createdAt).toLocaleString(locale)
+            : ""}
         </span>
       </div>
       <div className="sdp-comment-content">{node.content}</div>
       <div className="sdp-comment-actions">
-        <button type="button" className="sdp-link" onClick={() => onReply(node)}>
-          Trả lời
+        <button
+          type="button"
+          className="sdp-link"
+          onClick={() => onReply(node)}
+        >
+          {replyLabel}
         </button>
       </div>
       {Array.isArray(node.children) && node.children.length > 0 && (
         <div className="sdp-children">
           {node.children.map((c) => (
-            <CommentItem key={c.id} node={c} onReply={onReply} />
+            <CommentItem
+              key={c.id}
+              node={c}
+              onReply={onReply}
+              locale={locale}
+              anonymousLabel={anonymousLabel}
+              replyLabel={replyLabel}
+            />
           ))}
         </div>
       )}
@@ -76,10 +94,22 @@ function CommentItem({ node, onReply }) {
   );
 }
 
-function SongDetailPage({ songId, onBack, currentSong, playbackTime = 0, onSeek }) {
+function SongDetailPage({
+  songId,
+  onBack,
+  currentSong,
+  playbackTime = 0,
+  onSeek,
+}) {
+  const { t, i18n } = useTranslation();
   const [detail, setDetail] = useState(null);
   const [tab, setTab] = useState("lyrics"); // lyrics | comments
-  const [lyrics, setLyrics] = useState({ lrc: null, original: null, vi: null, en: null });
+  const [lyrics, setLyrics] = useState({
+    lrc: null,
+    original: null,
+    vi: null,
+    en: null,
+  });
   const [lyricsMode, setLyricsMode] = useState("original");
   const [lrcLines, setLrcLines] = useState([]);
   const [activeLineIdx, setActiveLineIdx] = useState(-1);
@@ -95,6 +125,11 @@ function SongDetailPage({ songId, onBack, currentSong, playbackTime = 0, onSeek 
 
   const refreshTimerRef = useRef(null);
 
+  const currentLang = (i18n.resolvedLanguage || i18n.language || "vi")
+    .toLowerCase()
+    .split("-")[0];
+  const uiLocale = currentLang === "vi" ? "vi-VN" : "en-US";
+
   const coverUrl = useMemo(() => {
     return (
       detail?.imageUrl ||
@@ -104,8 +139,12 @@ function SongDetailPage({ songId, onBack, currentSong, playbackTime = 0, onSeek 
     );
   }, [detail?.imageUrl, currentSong?.cover, currentSong?.imageUrl]);
 
-  const title = detail?.title || currentSong?.title || "Bài hát";
-  const artists = detail?.artists || currentSong?.artists || "Unknown Artist";
+  const title =
+    detail?.title || currentSong?.title || t("songDetailModal.fallbackTitle");
+  const artists =
+    detail?.artists ||
+    currentSong?.artists ||
+    t("songDetailModal.fallbackArtists");
 
   const fetchDetail = async () => {
     const res = await fetch(`http://localhost:5001/api/songs/${songId}/detail`);
@@ -115,12 +154,17 @@ function SongDetailPage({ songId, onBack, currentSong, playbackTime = 0, onSeek 
   };
 
   const fetchComments = async () => {
-    const res = await fetch(`http://localhost:5001/api/songs/${songId}/comments`);
+    const res = await fetch(
+      `http://localhost:5001/api/songs/${songId}/comments`
+    );
     const d = await res.json();
     if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
     const flat = Array.isArray(d?.data) ? d.data : [];
     // API already returns tree; but accept either tree or flat
-    const tree = flat.length > 0 && Array.isArray(flat[0]?.children) ? flat : buildTree(flat);
+    const tree =
+      flat.length > 0 && Array.isArray(flat[0]?.children)
+        ? flat
+        : buildTree(flat);
     setCommentsTree(tree);
   };
 
@@ -146,13 +190,16 @@ function SongDetailPage({ songId, onBack, currentSong, playbackTime = 0, onSeek 
       if (tab === "comments") await fetchComments();
       if (tab === "lyrics") await fetchLyrics();
     } catch (e) {
-      setError(e?.message || "Lỗi tải dữ liệu");
+      setError(e?.message || t("songDetailPage.errors.fetchFailed"));
     } finally {
       if (opts?.showGlobalLoading) setIsInitialLoading(false);
       const elapsed = Date.now() - startMs;
       const remain = Math.max(0, 200 - elapsed);
       if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-      refreshTimerRef.current = setTimeout(() => setIsRefreshing(false), remain);
+      refreshTimerRef.current = setTimeout(
+        () => setIsRefreshing(false),
+        remain
+      );
     }
   };
 
@@ -178,23 +225,26 @@ function SongDetailPage({ songId, onBack, currentSong, playbackTime = 0, onSeek 
   const submitComment = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("Vui lòng đăng nhập để bình luận");
+      alert(t("songDetailPage.comments.loginRequired"));
       return;
     }
     const text = String(commentText || "").trim();
     if (!text) return;
 
-    const res = await fetch(`http://localhost:5001/api/songs/${songId}/comments`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ content: text, parentId: replyTo?.id || null }),
-    });
+    const res = await fetch(
+      `http://localhost:5001/api/songs/${songId}/comments`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content: text, parentId: replyTo?.id || null }),
+      }
+    );
     const d = await res.json();
     if (!res.ok) {
-      alert(d?.error || "Lỗi gửi bình luận");
+      alert(d?.error || t("songDetailPage.comments.sendFailed"));
       return;
     }
     setCommentText("");
@@ -206,8 +256,8 @@ function SongDetailPage({ songId, onBack, currentSong, playbackTime = 0, onSeek 
     lyricsMode === "vi"
       ? lyrics.vi
       : lyricsMode === "en"
-        ? lyrics.en
-        : lyrics.original;
+      ? lyrics.en
+      : lyrics.original;
 
   const viLines = useMemo(() => {
     return lyrics?.vi ? String(lyrics.vi).split(/\r?\n/) : [];
@@ -251,18 +301,24 @@ function SongDetailPage({ songId, onBack, currentSong, playbackTime = 0, onSeek 
     }
   }, [playbackTime, lrcLines, activeLineIdx]);
 
-  if (isInitialLoading) return <div style={{ padding: 20 }}>Đang tải...</div>;
+  if (isInitialLoading)
+    return <div style={{ padding: 20 }}>{t("common.loading")}</div>;
 
   return (
     <div className="sdp">
       <div className="sdp-topbar">
         <button className="sdp-back" type="button" onClick={onBack}>
-          <IoChevronBack /> Quay lại
+          <IoChevronBack /> {t("common.back")}
         </button>
-        <div className="sdp-topbar-title">Chi tiết bài hát</div>
-        <button className="sdp-refresh" type="button" onClick={() => refreshAll()} disabled={isRefreshing}>
+        <div className="sdp-topbar-title">{t("songDetailPage.title")}</div>
+        <button
+          className="sdp-refresh"
+          type="button"
+          onClick={() => refreshAll()}
+          disabled={isRefreshing}
+        >
           <span className={`reload-spinner ${isRefreshing ? "" : "hidden"}`} />
-          Làm mới
+          {t("songDetailPage.actions.refresh")}
         </button>
       </div>
 
@@ -291,14 +347,14 @@ function SongDetailPage({ songId, onBack, currentSong, playbackTime = 0, onSeek 
               className={`tab-btn ${tab === "lyrics" ? "active" : ""}`}
               onClick={() => setTab("lyrics")}
             >
-              Lời bài hát
+              {t("songDetailModal.tabs.lyrics")}
             </button>
             <button
               type="button"
               className={`tab-btn ${tab === "comments" ? "active" : ""}`}
               onClick={() => setTab("comments")}
             >
-              Bình luận
+              {t("songDetailModal.tabs.comments")}
             </button>
           </div>
 
@@ -307,29 +363,37 @@ function SongDetailPage({ songId, onBack, currentSong, playbackTime = 0, onSeek 
               <div className="lyrics-toolbar">
                 <button
                   type="button"
-                  className={`pill ${lyricsMode === "original" ? "active" : ""}`}
+                  className={`pill ${
+                    lyricsMode === "original" ? "active" : ""
+                  }`}
                   onClick={() => setLyricsMode("original")}
                 >
-                  Gốc
+                  {t("songDetailModal.lyrics.original")}
                 </button>
                 <button
                   type="button"
                   className={`pill ${lyricsMode === "vi" ? "active" : ""}`}
                   onClick={() => setLyricsMode("vi")}
                 >
-                  VI
+                  {t("songDetailModal.lyrics.vi")}
                 </button>
                 <button
                   type="button"
                   className={`pill ${lyricsMode === "en" ? "active" : ""}`}
                   onClick={() => setLyricsMode("en")}
                 >
-                  EN
+                  {t("songDetailModal.lyrics.en")}
                 </button>
-                {lyrics?.lrc ? <span className="sdp-sync-badge">SYNC</span> : null}
+                {lyrics?.lrc ? (
+                  <span className="sdp-sync-badge">
+                    {t("songDetailPage.lyrics.syncBadge")}
+                  </span>
+                ) : null}
               </div>
               {!lyrics?.original && !lyrics?.lrc ? (
-                <div className="sdp-subtle">Không tìm thấy lời bài hát.</div>
+                <div className="sdp-subtle">
+                  {t("songDetailPage.lyrics.notFound")}
+                </div>
               ) : (
                 <>
                   {lrcLines.length > 0 ? (
@@ -337,24 +401,27 @@ function SongDetailPage({ songId, onBack, currentSong, playbackTime = 0, onSeek 
                       {lrcLines.map((line, idx) => {
                         const textForMode =
                           lyricsMode === "vi"
-                            ? (viLines[idx] ?? line.text)
+                            ? viLines[idx] ?? line.text
                             : lyricsMode === "en"
-                              ? (enLines[idx] ?? line.text)
-                              : line.text;
+                            ? enLines[idx] ?? line.text
+                            : line.text;
                         return (
                           <div
                             key={`${line.timeSec}-${idx}`}
                             ref={(el) => {
                               lyricLineRefs.current[idx] = el;
                             }}
-                            className={`sdp-lyric-line ${idx === activeLineIdx ? "active" : ""}`}
+                            className={`sdp-lyric-line ${
+                              idx === activeLineIdx ? "active" : ""
+                            }`}
                             role="button"
                             tabIndex={0}
                             onClick={() => onSeek && onSeek(line.timeSec)}
                             onKeyDown={(e) => {
-                              if (e.key === "Enter") onSeek && onSeek(line.timeSec);
+                              if (e.key === "Enter")
+                                onSeek && onSeek(line.timeSec);
                             }}
-                            title="Click để tua"
+                            title={t("songDetailPage.lyrics.seekHint")}
                           >
                             {textForMode}
                           </div>
@@ -374,13 +441,23 @@ function SongDetailPage({ songId, onBack, currentSong, playbackTime = 0, onSeek 
               <div className="sdp-composer">
                 {replyTo ? (
                   <div className="sdp-replying">
-                    Đang trả lời: <b>{replyTo.userName || "User"}</b>
-                    <button type="button" className="sdp-link" onClick={() => setReplyTo(null)}>
-                      Hủy
+                    {t("songDetailPage.comments.replyingTo")}{" "}
+                    <b>
+                      {replyTo.userName ||
+                        t("songDetailModal.comments.anonymousUser")}
+                    </b>
+                    <button
+                      type="button"
+                      className="sdp-link"
+                      onClick={() => setReplyTo(null)}
+                    >
+                      {t("songDetailPage.actions.cancel")}
                     </button>
                   </div>
                 ) : (
-                  <div className="sdp-subtle">Bình luận trực tiếp vào bài hát.</div>
+                  <div className="sdp-subtle">
+                    {t("songDetailPage.comments.directHint")}
+                  </div>
                 )}
                 <div className="sdp-composer-row">
                   <input
@@ -388,7 +465,7 @@ function SongDetailPage({ songId, onBack, currentSong, playbackTime = 0, onSeek 
                     type="text"
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
-                    placeholder="Nhập bình luận..."
+                    placeholder={t("songDetailPage.comments.placeholder")}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -396,21 +473,32 @@ function SongDetailPage({ songId, onBack, currentSong, playbackTime = 0, onSeek 
                       }
                     }}
                   />
-                  <button type="button" className="sdp-send" onClick={submitComment}>
+                  <button
+                    type="button"
+                    className="sdp-send"
+                    onClick={submitComment}
+                  >
                     <IoSend />
-                    Gửi
+                    {t("songDetailPage.comments.send")}
                   </button>
                 </div>
               </div>
 
               <div className="sdp-tree">
                 {commentsTree.length === 0 ? (
-                  <div className="sdp-subtle">Chưa có bình luận.</div>
+                  <div className="sdp-subtle">
+                    {t("songDetailModal.comments.empty")}
+                  </div>
                 ) : (
                   commentsTree.map((c) => (
                     <CommentItem
                       key={c.id}
                       node={c}
+                      locale={uiLocale}
+                      anonymousLabel={t(
+                        "songDetailModal.comments.anonymousUser"
+                      )}
+                      replyLabel={t("songDetailPage.comments.reply")}
                       onReply={(node) => {
                         setReplyTo({ id: node.id, userName: node.userName });
                         setCommentText((t) => (t ? t : ""));
@@ -428,5 +516,3 @@ function SongDetailPage({ songId, onBack, currentSong, playbackTime = 0, onSeek 
 }
 
 export default SongDetailPage;
-
-

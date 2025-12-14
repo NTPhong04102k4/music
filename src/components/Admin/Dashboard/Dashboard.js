@@ -1,5 +1,6 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import "./Dashboard.css";
+import { useTranslation } from "react-i18next";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -23,6 +24,7 @@ ChartJS.register(
 );
 
 function Dashboard() {
+  const { t, i18n } = useTranslation();
   const [stats, setStats] = useState({
     totalSongs: 0,
     totalAlbums: 0,
@@ -54,7 +56,7 @@ function Dashboard() {
           const data = await statsRes.json();
           setStats(data);
         } else {
-          console.error("Lỗi khi tải thống kê admin");
+          console.error("Failed to load admin stats");
         }
 
         if (chartsRes.ok) {
@@ -64,10 +66,10 @@ function Dashboard() {
             users: chartData?.users || { labels: [], values: [] },
           });
         } else {
-          console.error("Lỗi khi tải dữ liệu chart admin");
+          console.error("Failed to load admin chart data");
         }
       } catch (error) {
-        console.error("Lỗi kết nối:", error);
+        console.error("Connection error:", error);
       } finally {
         setLoading(false);
       }
@@ -76,12 +78,20 @@ function Dashboard() {
     fetchStats();
   }, []);
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
-  };
+  const formatCurrency = useCallback(
+    (amount) => {
+      const currentLang = (i18n.resolvedLanguage || i18n.language || "vi")
+        .toLowerCase()
+        .split("-")[0];
+      const locale = currentLang === "en" ? "en-US" : "vi-VN";
+
+      return new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency: "VND",
+      }).format(amount);
+    },
+    [i18n.language, i18n.resolvedLanguage]
+  );
 
   const revenueChartData = useMemo(() => {
     const labels = charts.revenue.labels || [];
@@ -90,7 +100,7 @@ function Dashboard() {
       labels,
       datasets: [
         {
-          label: "Doanh thu (VND)",
+          label: t("admin.dashboard.revenueLabel"),
           data: values,
           backgroundColor: "rgba(227, 80, 80, 0.35)",
           borderColor: "rgba(227, 80, 80, 0.9)",
@@ -98,7 +108,7 @@ function Dashboard() {
         },
       ],
     };
-  }, [charts.revenue.labels, charts.revenue.values]);
+  }, [charts.revenue.labels, charts.revenue.values, t]);
 
   const revenueChartOptions = useMemo(() => {
     return {
@@ -118,7 +128,15 @@ function Dashboard() {
           ticks: {
             callback: (value) => {
               try {
-                return new Intl.NumberFormat("vi-VN").format(value);
+                const currentLang = (
+                  i18n.resolvedLanguage ||
+                  i18n.language ||
+                  "vi"
+                )
+                  .toLowerCase()
+                  .split("-")[0];
+                const locale = currentLang === "en" ? "en-US" : "vi-VN";
+                return new Intl.NumberFormat(locale).format(value);
               } catch {
                 return value;
               }
@@ -127,7 +145,7 @@ function Dashboard() {
         },
       },
     };
-  }, []);
+  }, [i18n.language, i18n.resolvedLanguage, formatCurrency]);
 
   const usersChartData = useMemo(() => {
     const labels = charts.users.labels || [];
@@ -136,7 +154,7 @@ function Dashboard() {
       labels,
       datasets: [
         {
-          label: "Người dùng mới",
+          label: t("admin.dashboard.newUsersLabel"),
           data: values,
           borderColor: "rgba(74, 144, 226, 0.95)",
           backgroundColor: "rgba(74, 144, 226, 0.15)",
@@ -146,7 +164,7 @@ function Dashboard() {
         },
       ],
     };
-  }, [charts.users.labels, charts.users.values]);
+  }, [charts.users.labels, charts.users.values, t]);
 
   const usersChartOptions = useMemo(() => {
     return {
@@ -159,11 +177,11 @@ function Dashboard() {
   }, []);
 
   if (loading)
-    return <div style={{ padding: "20px" }}>Đang tải dữ liệu...</div>;
+    return <div style={{ padding: "20px" }}>{t("common.loading")}</div>;
 
   return (
     <div className="dashboard">
-      <h2>Tổng Quan</h2>
+      <h2>{t("admin.dashboard.title")}</h2>
 
       <div
         style={{
@@ -174,7 +192,7 @@ function Dashboard() {
         }}
       >
         <div className="admin-card" style={{ borderLeft: "4px solid #4a90e2" }}>
-          <h3>Bài Hát</h3>
+          <h3>{t("admin.dashboard.totalSongs")}</h3>
           <p
             style={{ fontSize: "24px", fontWeight: "bold", marginTop: "10px" }}
           >
@@ -182,7 +200,7 @@ function Dashboard() {
           </p>
         </div>
         <div className="admin-card" style={{ borderLeft: "4px solid #50e3c2" }}>
-          <h3>Album</h3>
+          <h3>{t("admin.dashboard.totalAlbums")}</h3>
           <p
             style={{ fontSize: "24px", fontWeight: "bold", marginTop: "10px" }}
           >
@@ -190,7 +208,7 @@ function Dashboard() {
           </p>
         </div>
         <div className="admin-card" style={{ borderLeft: "4px solid #f5a623" }}>
-          <h3>Người Dùng</h3>
+          <h3>{t("admin.dashboard.totalUsers")}</h3>
           <p
             style={{ fontSize: "24px", fontWeight: "bold", marginTop: "10px" }}
           >
@@ -198,7 +216,7 @@ function Dashboard() {
           </p>
         </div>
         <div className="admin-card" style={{ borderLeft: "4px solid #e35050" }}>
-          <h3>Doanh Thu</h3>
+          <h3>{t("admin.dashboard.totalRevenue")}</h3>
           <p
             style={{ fontSize: "24px", fontWeight: "bold", marginTop: "10px" }}
           >
@@ -210,8 +228,8 @@ function Dashboard() {
       <div className="dashboard-charts">
         <div className="dashboard-chart-card">
           <div className="dashboard-chart-header">
-            <h3>Doanh thu theo tháng</h3>
-            <span>12 tháng gần nhất</span>
+            <h3>{t("admin.dashboard.revenueByMonth")}</h3>
+            <span>{t("admin.dashboard.last12Months")}</span>
           </div>
           <div className="dashboard-chart-body">
             <Bar data={revenueChartData} options={revenueChartOptions} />
@@ -220,8 +238,8 @@ function Dashboard() {
 
         <div className="dashboard-chart-card">
           <div className="dashboard-chart-header">
-            <h3>Người dùng mới theo tháng</h3>
-            <span>12 tháng gần nhất</span>
+            <h3>{t("admin.dashboard.newUsersByMonth")}</h3>
+            <span>{t("admin.dashboard.last12Months")}</span>
           </div>
           <div className="dashboard-chart-body">
             <Line data={usersChartData} options={usersChartOptions} />

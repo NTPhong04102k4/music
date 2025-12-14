@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./UserMenu.css";
+import { useTranslation } from "react-i18next";
 import {
   IoPersonCircleOutline,
   IoLogOutOutline,
@@ -22,6 +23,7 @@ function UserMenu({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
+  const { t } = useTranslation();
 
   // Đóng menu khi click ra ngoài
   useEffect(() => {
@@ -75,7 +77,7 @@ function UserMenu({
                     user.avatar ||
                     "https://zmdjs.zmdcdn.me/zmp3-desktop/v1.17.3/static/media/user-default.3ff115bb.png"
                   }
-                  alt="Avatar"
+                  alt={t("userMenu.avatarAlt")}
                   className="menu-avatar"
                 />
                 <div className="user-details">
@@ -94,7 +96,7 @@ function UserMenu({
                   onViewProfile();
                 }}
               >
-                <IoPersonOutline /> Thông tin tài khoản
+                <IoPersonOutline /> {t("userMenu.accountInfo")}
               </button>
 
               <button
@@ -104,7 +106,7 @@ function UserMenu({
                   onViewInvoices();
                 }}
               >
-                <IoReceiptOutline /> Lịch sử giao dịch
+                <IoReceiptOutline /> {t("userMenu.transactionHistory")}
               </button>
 
               {/* Nút Đổi mật khẩu sẽ hoạt động vì prop đã được nhận */}
@@ -116,7 +118,7 @@ function UserMenu({
                     onChangePassword();
                   }}
                 >
-                  <IoKeyOutline /> Đổi mật khẩu
+                  <IoKeyOutline /> {t("userMenu.changePassword")}
                 </button>
               ) : null}
 
@@ -128,7 +130,7 @@ function UserMenu({
                   onLogout();
                 }}
               >
-                <IoLogOutOutline /> Đăng xuất
+                <IoLogOutOutline /> {t("userMenu.logout")}
               </button>
             </>
           ) : (
@@ -141,7 +143,7 @@ function UserMenu({
                   onLogin();
                 }}
               >
-                <IoLogInOutline /> Đăng nhập
+                <IoLogInOutline /> {t("userMenu.login")}
               </button>
               <button
                 className="menu-item"
@@ -150,7 +152,7 @@ function UserMenu({
                   onLogin();
                 }}
               >
-                <IoPersonAddOutline /> Đăng ký
+                <IoPersonAddOutline /> {t("userMenu.register")}
               </button>
             </>
           )}

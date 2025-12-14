@@ -8,6 +8,7 @@ import {
   IoHeart,
 } from "react-icons/io5";
 import { SONG_STATS_CHANGED_EVENT } from "../../utils/songEvents";
+import { useTranslation } from "react-i18next";
 
 // Bỏ các props không dùng: isShuffled, onToggleShuffle, repeatMode...
 function SongActionModal({
@@ -17,24 +18,27 @@ function SongActionModal({
   isFavorite,
   onToggleFavorite,
 }) {
+  const { t } = useTranslation();
   const [displayLikeCount, setDisplayLikeCount] = useState(0);
+  const songId = song?.id;
+  const songLikeCount = song?.likeCount;
 
   useEffect(() => {
-    if (!song) return;
-    setDisplayLikeCount(song.likeCount);
-  }, [song?.id, song?.likeCount]);
+    if (!songId) return;
+    setDisplayLikeCount(typeof songLikeCount === "number" ? songLikeCount : 0);
+  }, [songId, songLikeCount]);
 
   useEffect(() => {
-    if (!song) return;
+    if (!songId) return;
     const handler = (e) => {
       const detail = e?.detail || {};
-      if (detail.songId === song.id && typeof detail.likeCount === "number") {
+      if (detail.songId === songId && typeof detail.likeCount === "number") {
         setDisplayLikeCount(detail.likeCount);
       }
     };
     window.addEventListener(SONG_STATS_CHANGED_EVENT, handler);
     return () => window.removeEventListener(SONG_STATS_CHANGED_EVENT, handler);
-  }, [song?.id]);
+  }, [songId]);
 
   const formatNumber = (num) => {
     const n = parseInt(num, 10);
@@ -49,7 +53,12 @@ function SongActionModal({
   return (
     <div className="song-action-overlay" onClick={onClose}>
       <div className="song-action-content" onClick={(e) => e.stopPropagation()}>
-        <button className="close-action-btn" onClick={onClose}>
+        <button
+          className="close-action-btn"
+          onClick={onClose}
+          aria-label={t("common.close")}
+          title={t("common.close")}
+        >
           <IoClose />
         </button>
 
@@ -74,10 +83,16 @@ function SongActionModal({
             </p>
 
             <div className="action-stats">
-              <span className="stat-item" title="Lượt thích">
+              <span
+                className="stat-item"
+                title={t("songActionModal.stats.likes")}
+              >
                 <IoHeartOutline /> {formatNumber(displayLikeCount)}
               </span>
-              <span className="stat-item" title="Lượt nghe">
+              <span
+                className="stat-item"
+                title={t("songActionModal.stats.listens")}
+              >
                 <IoHeadset /> {formatNumber(song.listenCount)}
               </span>
             </div>
@@ -106,8 +121,8 @@ function SongActionModal({
             </span>
             <span className="action-text">
               {isFavorite
-                ? "Xóa khỏi bài hát yêu thích"
-                : "Thêm vào bài hát yêu thích"}
+                ? t("songActionModal.actions.removeFromFavorites")
+                : t("songActionModal.actions.addToFavorites")}
             </span>
           </div>
 
@@ -122,7 +137,9 @@ function SongActionModal({
             <span className="action-icon">
               <IoAddCircleOutline />
             </span>
-            <span className="action-text">Thêm vào danh sách phát</span>
+            <span className="action-text">
+              {t("songActionModal.actions.addToPlaylist")}
+            </span>
           </div>
         </div>
       </div>

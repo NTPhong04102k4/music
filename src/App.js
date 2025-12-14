@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import "./App.css";
+import { useTranslation } from "react-i18next";
 
 // Import các component
 import Header from "./components/Header/Header";
@@ -38,6 +39,7 @@ import GenreLibrary from "./components/GenreLibrary/GenreLibrary";
 import GenreDetail from "./components/GenreDetail/GenreDetail";
 
 function App() {
+  const { t } = useTranslation();
   // Link cửa hàng dụng cụ âm nhạc (đổi theo cửa hàng bạn muốn)
   const MUSIC_SHOP_URL = "https://your-music-shop-link.com";
 
@@ -250,10 +252,10 @@ function App() {
 
   // 2. Handler khi thanh toán thành công
   const handlePaymentSuccess = useCallback(() => {
-    alert("Cảm ơn bạn đã nâng cấp VIP!");
+    alert(t("app.alerts.vipUpgradeThanks"));
     setCurrentView("main");
     setSelectedVipPackage(null);
-  }, []);
+  }, [t]);
 
   // 3. Handler quay lại từ trang thanh toán
   const handleBackFromPayment = useCallback(() => {
@@ -285,7 +287,7 @@ function App() {
   const handleToggleFavorite = useCallback(
     async (songId) => {
       if (!isLoggedIn) {
-        alert("Vui lòng đăng nhập để sử dụng tính năng này");
+        alert(t("app.alerts.loginRequired"));
         return;
       }
       try {
@@ -313,7 +315,7 @@ function App() {
         console.error("Error toggling favorite:", error);
       }
     },
-    [isLoggedIn]
+    [isLoggedIn, t]
   );
 
   // 2. Xử lý phát nhạc
@@ -423,16 +425,16 @@ function App() {
       usernameLower.includes("google") || usernameLower.includes("facebook");
 
     if (!u || u.role !== "user") {
-      alert("Không có quyền");
+      alert(t("app.alerts.noPermission"));
       return;
     }
     if (isSocial) {
-      alert("Tài khoản Google/Facebook không thể đổi mật khẩu tại đây");
+      alert(t("app.alerts.socialAccountCannotChangePassword"));
       return;
     }
 
     setShowChangePasswordModal(true);
-  }, [user]);
+  }, [user, t]);
   // Hàm chuyển sang trang thông tin tài khoản
   const handleViewProfile = useCallback(() => {
     setCurrentView("profile");
@@ -504,42 +506,49 @@ function App() {
     (song) => {
       // Logic này có thể giữ nguyên hoặc dùng lại logic cũ
       if (!isLoggedIn) {
-        alert("Vui lòng đăng nhập để sử dụng tính năng này");
+        alert(t("app.alerts.loginRequired"));
         return;
       }
       setSongToAddToPlaylist(song);
       setShowAddToPlaylistModal(true);
     },
-    [isLoggedIn]
+    [isLoggedIn, t]
   );
 
   // 3. Hàm thực hiện thêm vào playlist
-  const handleAddToPlaylist = useCallback(async (playlistId, songId) => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5001/api/playlists/${playlistId}/songs`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ songId }),
+  const handleAddToPlaylist = useCallback(
+    async (playlistId, songId) => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          `http://localhost:5001/api/playlists/${playlistId}/songs`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ songId }),
+          }
+        );
+        const data = await response.json();
+        if (response.ok) {
+          alert(t("app.alerts.addToPlaylistSuccess"));
+          setShowAddToPlaylistModal(false);
+          setSongToAddToPlaylist(null);
+        } else {
+          if (data?.errorCode === "SONG_ALREADY_IN_PLAYLIST") {
+            alert(t("playlist.addToPlaylist.errors.songAlreadyInPlaylist"));
+          } else {
+            alert(data?.error || t("app.alerts.addToPlaylistFailed"));
+          }
         }
-      );
-      const data = await response.json();
-      if (response.ok) {
-        alert("Đã thêm bài hát vào playlist thành công!");
-        setShowAddToPlaylistModal(false);
-        setSongToAddToPlaylist(null);
-      } else {
-        alert(data.error || "Lỗi khi thêm bài hát");
+      } catch (error) {
+        alert(t("errors.serverConnection"));
       }
-    } catch (error) {
-      alert("Lỗi kết nối server");
-    }
-  }, []);
+    },
+    [t]
+  );
   // === RENDER ADMIN VIEW ===
   // Nếu currentView bắt đầu bằng 'admin-' và user là admin
   if (currentView.startsWith("admin-")) {

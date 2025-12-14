@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import "../MainContent/MainContent.css";
 import "./GenreLibrary.css";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
+import { useTranslation } from "react-i18next";
 
 function GenreLibrary({ onBack, onViewGenre }) {
+  const { t } = useTranslation();
   const [genres, setGenres] = useState([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -11,18 +13,23 @@ function GenreLibrary({ onBack, onViewGenre }) {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
+  const BACKEND_URL =
+    process.env.REACT_APP_BACKEND_URL || "http://localhost:5001";
 
   const fetchGenres = async (nextPage = 1) => {
     setError("");
     try {
       setIsLoading(true);
       const res = await fetch(
-        `http://localhost:5001/api/genres?page=${nextPage}&limit=${limit}`
+        `${BACKEND_URL}/api/genres?page=${nextPage}&limit=${limit}`
       );
       const data = await res.json();
       if (!res.ok) {
         setGenres([]);
-        setError(data?.error || `Lỗi tải thể loại (HTTP ${res.status})`);
+        setError(
+          data?.error ||
+            t("genreLibrary.errors.fetchFailed", { status: res.status })
+        );
         return;
       }
 
@@ -33,7 +40,7 @@ function GenreLibrary({ onBack, onViewGenre }) {
       setPage(Number(data?.pagination?.page || nextPage));
     } catch (e) {
       setGenres([]);
-      setError("Lỗi kết nối server");
+      setError(t("errors.serverConnection"));
     } finally {
       setIsLoading(false);
     }
@@ -49,7 +56,8 @@ function GenreLibrary({ onBack, onViewGenre }) {
     fetchGenres(newPage);
   };
 
-  if (isLoading) return <div style={{ padding: 20 }}>Đang tải thể loại...</div>;
+  if (isLoading)
+    return <div style={{ padding: 20 }}>{t("genreLibrary.loading")}</div>;
 
   return (
     <div className="main-content genre-library">
@@ -57,9 +65,9 @@ function GenreLibrary({ onBack, onViewGenre }) {
         <div className="section-header">
           <div className="genre-library-title">
             <button className="genre-back-btn" onClick={onBack} type="button">
-              <IoChevronBack /> Quay lại
+              <IoChevronBack /> {t("common.back")}
             </button>
-            <h2>Tất Cả Thể Loại</h2>
+            <h2>{t("genreLibrary.title")}</h2>
           </div>
         </div>
 
@@ -81,8 +89,12 @@ function GenreLibrary({ onBack, onViewGenre }) {
                 ) : null}
               </div>
               <div className="genre-row-right">
-                <span className="genre-row-count">{Number(g.songCount || 0)}</span>
-                <span className="genre-row-count-label">bài</span>
+                <span className="genre-row-count">
+                  {Number(g.songCount || 0)}
+                </span>
+                <span className="genre-row-count-label">
+                  {t("genreLibrary.songCountShortLabel")}
+                </span>
               </div>
             </button>
           ))}
@@ -95,7 +107,7 @@ function GenreLibrary({ onBack, onViewGenre }) {
             disabled={page <= 1}
             onClick={() => handlePageChange(page - 1)}
           >
-            <IoChevronBack /> Trước
+            <IoChevronBack /> {t("genreLibrary.pagination.prev")}
           </button>
 
           <div className="genre-page-numbers">
@@ -119,7 +131,7 @@ function GenreLibrary({ onBack, onViewGenre }) {
             disabled={page >= totalPages}
             onClick={() => handlePageChange(page + 1)}
           >
-            Sau <IoChevronForward />
+            {t("genreLibrary.pagination.next")} <IoChevronForward />
           </button>
         </div>
       </section>
@@ -128,5 +140,3 @@ function GenreLibrary({ onBack, onViewGenre }) {
 }
 
 export default GenreLibrary;
-
-

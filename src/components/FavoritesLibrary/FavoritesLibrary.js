@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./FavoritesLibrary.css";
 import { IoPause, IoPlay, IoTrashOutline } from "react-icons/io5";
+import { useTranslation } from "react-i18next";
 
 function FavoritesLibrary({
   onPlaySong,
@@ -8,32 +9,37 @@ function FavoritesLibrary({
   isPlaying,
   onTogglePlayPause,
 }) {
+  const { t } = useTranslation();
   const [favorites, setFavorites] = useState([]);
+  const BACKEND_URL =
+    process.env.REACT_APP_BACKEND_URL || "http://localhost:5001";
 
   const fetchFavorites = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
     try {
-      const res = await fetch("http://localhost:5001/api/favorites", {
+      const res = await fetch(`${BACKEND_URL}/api/favorites`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       const data = await res.json().catch(() => []);
       if (!res.ok)
-        throw new Error(data?.error || "Không thể tải danh sách yêu thích");
+        throw new Error(
+          data?.error || t("favoritesLibrary.errors.fetchFailed")
+        );
 
       if (Array.isArray(data)) setFavorites(data);
       else {
-        console.error("API favorites không trả về mảng:", data);
+        console.error("Favorites API did not return an array:", data);
         setFavorites([]);
       }
     } catch (err) {
       console.error("Error loading favorites:", err);
       setFavorites([]);
     }
-  }, []);
+  }, [BACKEND_URL, t]);
 
   useEffect(() => {
     fetchFavorites();
@@ -45,43 +51,42 @@ function FavoritesLibrary({
 
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("Vui lòng đăng nhập để xóa bài hát khỏi yêu thích");
+        alert(t("favoritesLibrary.alerts.loginToRemove"));
         return;
       }
 
-      const ok = window.confirm("Xóa bài hát khỏi danh sách yêu thích?");
+      const ok = window.confirm(t("favoritesLibrary.confirms.remove"));
       if (!ok) return;
 
       try {
         // Endpoint này toggle: nếu đã thích thì sẽ "bỏ thích" (xóa khỏi favorites)
-        const res = await fetch(
-          `http://localhost:5001/api/favorites/${songId}`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await fetch(`${BACKEND_URL}/api/favorites/${songId}`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         const data = await res.json().catch(() => ({}));
         if (!res.ok)
-          throw new Error(data?.error || "Xóa khỏi yêu thích thất bại");
+          throw new Error(
+            data?.error || t("favoritesLibrary.errors.removeFailed")
+          );
 
         // Gọi GET để làm mới dữ liệu
         await fetchFavorites();
       } catch (err) {
         console.error("Error removing favorite:", err);
-        alert(err?.message || "Lỗi khi xóa bài hát khỏi yêu thích");
+        alert(err?.message || t("favoritesLibrary.errors.removeErrorFallback"));
       }
     },
-    [fetchFavorites]
+    [fetchFavorites, BACKEND_URL, t]
   );
 
   return (
     <div className="favorites-library">
       <div className="favorites-header">
-        <h2>Bài Hát Yêu Thích</h2>
+        <h2>{t("favoritesLibrary.title")}</h2>
         <button
           className="zm-btn play-all-btn"
           onClick={() =>
@@ -89,17 +94,19 @@ function FavoritesLibrary({
           }
           disabled={favorites.length === 0}
           title={
-            favorites.length === 0 ? "Chưa có bài hát để phát" : "Phát tất cả"
+            favorites.length === 0
+              ? t("favoritesLibrary.playAllTitleEmpty")
+              : t("favoritesLibrary.playAllTitle")
           }
         >
-          <IoPlay /> PHÁT TẤT CẢ
+          <IoPlay /> {t("favoritesLibrary.playAllButton")}
         </button>
       </div>
 
       <div className="favorites-list">
         {favorites.length === 0 ? (
           <div className="no-favorites">
-            <p>Chưa có bài hát yêu thích nào.</p>
+            <p>{t("favoritesLibrary.empty")}</p>
           </div>
         ) : (
           favorites.map((song, index) => (
@@ -134,8 +141,16 @@ function FavoritesLibrary({
                 {String(song.id) === String(currentSong?.id) ? (
                   <button
                     className="favorite-now-btn"
-                    title={isPlaying ? "Tạm dừng" : "Phát"}
-                    aria-label={isPlaying ? "Tạm dừng" : "Phát"}
+                    title={
+                      isPlaying
+                        ? t("favoritesLibrary.tooltips.pause")
+                        : t("favoritesLibrary.tooltips.play")
+                    }
+                    aria-label={
+                      isPlaying
+                        ? t("favoritesLibrary.tooltips.pause")
+                        : t("favoritesLibrary.tooltips.play")
+                    }
                     onClick={(e) => {
                       e?.stopPropagation?.();
                       onTogglePlayPause?.();
@@ -146,8 +161,8 @@ function FavoritesLibrary({
                 ) : (
                   <button
                     className="favorite-delete-btn"
-                    title="Xóa khỏi yêu thích"
-                    aria-label="Xóa khỏi yêu thích"
+                    title={t("favoritesLibrary.tooltips.remove")}
+                    aria-label={t("favoritesLibrary.tooltips.remove")}
                     onClick={(e) => handleRemoveFavorite(song.id, e)}
                   >
                     <IoTrashOutline />

@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import "../MainContent/MainContent.css";
 import "./ArtistLibrary.css";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
+import { useTranslation } from "react-i18next";
 
 function ArtistLibrary({ onBack, onViewArtist }) {
+  const { t } = useTranslation();
   const [artists, setArtists] = useState([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -11,6 +13,8 @@ function ArtistLibrary({ onBack, onViewArtist }) {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
+  const BACKEND_URL =
+    process.env.REACT_APP_BACKEND_URL || "http://localhost:5001";
 
   const fetchArtists = async (nextPage = 1) => {
     setError("");
@@ -18,11 +22,14 @@ function ArtistLibrary({ onBack, onViewArtist }) {
       setIsLoading(true);
 
       const res = await fetch(
-        `http://localhost:5001/api/artists?page=${nextPage}&limit=${limit}`
+        `${BACKEND_URL}/api/artists?page=${nextPage}&limit=${limit}`
       );
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error || `Lỗi tải nghệ sĩ (HTTP ${res.status})`);
+        setError(
+          data?.error ||
+            t("artistLibrary.errors.fetchFailed", { status: res.status })
+        );
         setArtists([]);
         return;
       }
@@ -33,7 +40,7 @@ function ArtistLibrary({ onBack, onViewArtist }) {
       setTotalPages(tp);
       setPage(Number(data?.pagination?.page || nextPage));
     } catch (e) {
-      setError("Lỗi kết nối server");
+      setError(t("errors.serverConnection"));
       setArtists([]);
     } finally {
       setIsLoading(false);
@@ -50,7 +57,8 @@ function ArtistLibrary({ onBack, onViewArtist }) {
     fetchArtists(newPage);
   };
 
-  if (isLoading) return <div style={{ padding: 20 }}>Đang tải nghệ sĩ...</div>;
+  if (isLoading)
+    return <div style={{ padding: 20 }}>{t("artistLibrary.loading")}</div>;
 
   return (
     <div className="main-content artist-library">
@@ -58,9 +66,9 @@ function ArtistLibrary({ onBack, onViewArtist }) {
         <div className="section-header">
           <div className="artist-library-title">
             <button className="artist-back-btn" onClick={onBack} type="button">
-              <IoChevronBack /> Quay lại
+              <IoChevronBack /> {t("common.back")}
             </button>
-            <h2>Tất Cả Nghệ Sĩ</h2>
+            <h2>{t("artistLibrary.title")}</h2>
           </div>
         </div>
 
@@ -103,7 +111,7 @@ function ArtistLibrary({ onBack, onViewArtist }) {
             disabled={page <= 1}
             onClick={() => handlePageChange(page - 1)}
           >
-            <IoChevronBack /> Trước
+            <IoChevronBack /> {t("artistLibrary.pagination.prev")}
           </button>
 
           <div className="artist-page-numbers">
@@ -127,7 +135,7 @@ function ArtistLibrary({ onBack, onViewArtist }) {
             disabled={page >= totalPages}
             onClick={() => handlePageChange(page + 1)}
           >
-            Sau <IoChevronForward />
+            {t("artistLibrary.pagination.next")} <IoChevronForward />
           </button>
         </div>
       </section>

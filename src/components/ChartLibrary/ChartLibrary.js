@@ -1,10 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import "../MainContent/MainContent.css";
 import "./ChartLibrary.css";
 import { IoChevronBack, IoPlay } from "react-icons/io5";
 import { SONG_STATS_CHANGED_EVENT } from "../../utils/songEvents";
+import { useTranslation } from "react-i18next";
 
 function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
+  const { t } = useTranslation();
   const [songs, setSongs] = useState([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -16,44 +18,46 @@ function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
   const limit = 20;
   const refreshTimerRef = useRef(null);
 
-  const fetchAllCharts = async (
-    page = 1,
-    opts = { showGlobalLoading: false }
-  ) => {
-    if (opts?.showGlobalLoading) setIsInitialLoading(true);
-    setError("");
-    try {
-      const res = await fetch(
-        `http://localhost:5001/api/charts/all?category=${category}&page=${page}&limit=${limit}`
-      );
-      const data = await res.json();
-      if (!res.ok) {
-        setSongs([]);
-        setError(data?.error || `Lỗi tải bảng xếp hạng (HTTP ${res.status})`);
-        return;
-      }
-      if (data && Array.isArray(data.data)) {
-        setSongs(data.data);
-        if (data.pagination) {
-          setCurrentPage(Number(data.pagination.page || page));
-          setTotalPages(Number(data.pagination.totalPages || 1));
+  const fetchAllCharts = useCallback(
+    async (page = 1, opts = { showGlobalLoading: false }) => {
+      if (opts?.showGlobalLoading) setIsInitialLoading(true);
+      setError("");
+      try {
+        const res = await fetch(
+          `http://localhost:5001/api/charts/all?category=${category}&page=${page}&limit=${limit}`
+        );
+        const data = await res.json();
+        if (!res.ok) {
+          setSongs([]);
+          setError(
+            data?.error ||
+              t("chartLibrary.errors.fetchFailed", { status: res.status })
+          );
+          return;
         }
-      } else {
+        if (data && Array.isArray(data.data)) {
+          setSongs(data.data);
+          if (data.pagination) {
+            setCurrentPage(Number(data.pagination.page || page));
+            setTotalPages(Number(data.pagination.totalPages || 1));
+          }
+        } else {
+          setSongs([]);
+          setError(t("chartLibrary.errors.invalidData"));
+        }
+      } catch (e) {
         setSongs([]);
-        setError("Dữ liệu trả về không hợp lệ");
+        setError(t("errors.serverConnection"));
+      } finally {
+        if (opts?.showGlobalLoading) setIsInitialLoading(false);
       }
-    } catch (e) {
-      setSongs([]);
-      setError("Lỗi kết nối server");
-    } finally {
-      if (opts?.showGlobalLoading) setIsInitialLoading(false);
-    }
-  };
+    },
+    [category, limit, t]
+  );
 
   useEffect(() => {
     fetchAllCharts(1, { showGlobalLoading: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchAllCharts]);
 
   // If navigation opens with different initialCategory later (rare), sync once
   useEffect(() => {
@@ -61,21 +65,24 @@ function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialCategory]);
 
-  const refreshPage = async (page = currentPage) => {
-    const startMs = Date.now();
-    setIsRefreshing(true);
-    try {
-      await fetchAllCharts(page, { showGlobalLoading: false });
-    } finally {
-      const elapsed = Date.now() - startMs;
-      const remain = Math.max(0, 200 - elapsed);
-      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-      refreshTimerRef.current = setTimeout(
-        () => setIsRefreshing(false),
-        remain
-      );
-    }
-  };
+  const refreshPage = useCallback(
+    async (page) => {
+      const startMs = Date.now();
+      setIsRefreshing(true);
+      try {
+        await fetchAllCharts(page, { showGlobalLoading: false });
+      } finally {
+        const elapsed = Date.now() - startMs;
+        const remain = Math.max(0, 200 - elapsed);
+        if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = setTimeout(
+          () => setIsRefreshing(false),
+          remain
+        );
+      }
+    },
+    [fetchAllCharts]
+  );
 
   useEffect(() => {
     return () => {
@@ -97,7 +104,7 @@ function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
     };
     window.addEventListener(SONG_STATS_CHANGED_EVENT, handler);
     return () => window.removeEventListener(SONG_STATS_CHANGED_EVENT, handler);
-  }, [currentPage]);
+  }, [currentPage, refreshPage]);
 
   const handlePageChange = (newPage) => {
     if (newPage < 1 || newPage > totalPages) return;
@@ -105,7 +112,7 @@ function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
   };
 
   if (isInitialLoading)
-    return <div style={{ padding: 20 }}>Đang tải bảng xếp hạng...</div>;
+    return <div style={{ padding: 20 }}>{t("chartLibrary.loading")}</div>;
 
   return (
     <div className="main-content chart-library">
@@ -113,9 +120,9 @@ function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
         <div className="section-header">
           <div className="chart-library-title">
             <button className="chart-back-btn" onClick={onBack} type="button">
-              <IoChevronBack /> Quay lại
+              <IoChevronBack /> {t("common.back")}
             </button>
-            <h2>Tất Cả Bảng Xếp Hạng</h2>
+            <h2>{t("chartLibrary.title")}</h2>
           </div>
 
           <div className="chart-tabs">
@@ -126,7 +133,7 @@ function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
                 setCategory("all");
               }}
             >
-              TẤT CẢ
+              {t("mainContent.charts.tabs.all")}
             </button>
             <button
               type="button"
@@ -135,7 +142,7 @@ function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
                 setCategory("vn");
               }}
             >
-              NHẠC VIỆT
+              {t("mainContent.charts.tabs.vn")}
             </button>
             <button
               type="button"
@@ -144,7 +151,7 @@ function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
                 setCategory("foreign");
               }}
             >
-              NHẠC NGOẠI
+              {t("mainContent.charts.tabs.foreign")}
             </button>
           </div>
 
@@ -157,7 +164,7 @@ function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
             <span
               className={`reload-spinner ${isRefreshing ? "" : "hidden"}`}
             />
-            LÀM MỚI
+            {t("common.refresh")}
           </button>
         </div>
 
@@ -206,7 +213,7 @@ function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
           ))}
           {songs.length === 0 && !error && (
             <div style={{ color: "var(--text-secondary)" }}>
-              Chưa có dữ liệu.
+              {t("chartLibrary.empty")}
             </div>
           )}
         </div>
@@ -218,17 +225,20 @@ function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
               disabled={currentPage === 1 || isRefreshing}
               onClick={() => handlePageChange(currentPage - 1)}
             >
-              Trước
+              {t("chartLibrary.pagination.prev")}
             </button>
             <span className="pagination-info">
-              Trang {currentPage} / {totalPages}
+              {t("chartLibrary.pagination.page", {
+                page: currentPage,
+                total: totalPages,
+              })}
             </span>
             <button
               className="admin-btn"
               disabled={currentPage === totalPages || isRefreshing}
               onClick={() => handlePageChange(currentPage + 1)}
             >
-              Sau
+              {t("chartLibrary.pagination.next")}
             </button>
           </div>
         )}

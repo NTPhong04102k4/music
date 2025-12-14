@@ -16,6 +16,7 @@
     "login": "Log in"
   },
   "settings": {
+    "openSettings": "Settings",
     "language": "Language",
     "helpSupport": "Help & support",
     "feedback": "Feedback"
@@ -27,8 +28,13 @@
   "common": {
     "or": "or",
     "close": "Close",
+    "show": "Show",
+    "hide": "Hide",
     "loading": "Loading...",
     "back": "Back",
+    "refresh": "REFRESH",
+    "viewAll": "View all",
+    "more": "More",
     "notAvailable": "N/A"
   },
   "errors": {
@@ -89,6 +95,7 @@
     "badge": "VIP MEMBER",
     "currentPlan": {
       "title": "Your current plan",
+      "defaultPlanName": "Premium",
       "daysLeft_one": "{{count}} day left",
       "daysLeft_other": "{{count}} days left",
       "expiry": "Expires: {{date}}",
@@ -121,13 +128,20 @@
       "changePlanFailed": "Change plan failed.",
       "changedFree": "Plan changed (free).",
       "downgradeWindowOnly": "You can only downgrade within the first 7 days after account registration."
+    },
+    "errors": {
+      "loadPackagesFailed": "Failed to load packages.",
+      "missingOnBuyProp": "Missing required prop 'onBuy' in VipUpgrade."
     }
   },
   "playlist": {
     "addToPlaylist": {
       "title": "Add to playlist",
       "chooseToAdd": "Choose a playlist to add the song:",
-      "empty": "You don't have any playlists yet."
+      "empty": "You don't have any playlists yet.",
+      "errors": {
+        "songAlreadyInPlaylist": "This song is already in the playlist."
+      }
     }
   },
   "albumDetail": {
@@ -164,6 +178,530 @@
     "errors": {
       "fetchFailed": "Failed to load artist (HTTP {{status}}).",
       "invalidArtistId": "Invalid artistId."
+    }
+  },
+  "artistLibrary": {
+    "title": "All artists",
+    "loading": "Loading artists...",
+    "pagination": {
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "errors": {
+      "fetchFailed": "Failed to load artists (HTTP {{status}})."
+    }
+  },
+  "favoritesLibrary": {
+    "title": "Favorite songs",
+    "playAllButton": "PLAY ALL",
+    "playAllTitle": "Play all",
+    "playAllTitleEmpty": "No songs to play yet",
+    "empty": "You don't have any favorite songs yet.",
+    "tooltips": {
+      "play": "Play",
+      "pause": "Pause",
+      "remove": "Remove from favorites"
+    },
+    "alerts": {
+      "loginToRemove": "Please log in to remove a song from favorites."
+    },
+    "confirms": {
+      "remove": "Remove this song from favorites?"
+    },
+    "errors": {
+      "fetchFailed": "Unable to load favorites.",
+      "removeFailed": "Failed to remove from favorites.",
+      "removeErrorFallback": "An error occurred while removing the song from favorites."
+    }
+  },
+  "genreDetail": {
+    "title": "Genre details",
+    "loading": "Loading genre...",
+    "emptyDescription": "No description yet.",
+    "songCountLabel": "songs",
+    "playAll": "Play all",
+    "songsTitle": "Songs",
+    "emptySongs": "No songs yet.",
+    "errors": {
+      "fetchFailed": "Failed to load genre (HTTP {{status}}).",
+      "invalidGenreId": "Invalid genreId."
+    }
+  },
+  "genreLibrary": {
+    "title": "All genres",
+    "loading": "Loading genres...",
+    "songCountShortLabel": "songs",
+    "pagination": {
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "errors": {
+      "fetchFailed": "Failed to load genres (HTTP {{status}})."
+    }
+  },
+  "invoiceDetail": {
+    "loading": "Loading details...",
+    "notFound": "Invoice not found.",
+    "backToList": "Back to list",
+    "title": "Invoice details #{{id}}",
+    "status": {
+      "success": "Success",
+      "processing": "Processing"
+    },
+    "transactionTime": "Transaction time",
+    "serviceDetails": "Service details",
+    "defaultServiceName": "VIP service",
+    "totalPayment": "Total payment"
+  },
+  "playlistLibrary": {
+    "title": "Playlists",
+    "createPlaylist": "CREATE PLAYLIST",
+    "empty": "You don't have any playlists yet.",
+    "createdByYou": "Created by you",
+    "createModal": {
+      "title": "Create new playlist",
+      "namePlaceholder": "Playlist name",
+      "descPlaceholder": "Description (optional)",
+      "submit": "CREATE"
+    },
+    "alerts": {
+      "loginRequired": "Please log in to create a playlist.",
+      "createFailed": "Failed to create playlist."
+    }
+  },
+  "playlistQueue": {
+    "title": "Playlist",
+    "nowPlaying": "Now playing",
+    "upNext": "Up next",
+    "empty": "Empty queue"
+  },
+  "songActionModal": {
+    "stats": {
+      "likes": "Likes",
+      "listens": "Listens"
+    },
+    "actions": {
+      "addToFavorites": "Add to favorites",
+      "removeFromFavorites": "Remove from favorites",
+      "addToPlaylist": "Add to playlist"
+    }
+  },
+  "songDetailModal": {
+    "tabs": {
+      "lyrics": "Lyrics",
+      "comments": "Comments"
+    },
+    "lyrics": {
+      "original": "Original",
+      "vi": "VI",
+      "en": "EN",
+      "loading": "Loading lyrics...",
+      "notFound": "No lyrics found for this song."
+    },
+    "comments": {
+      "loading": "Loading comments...",
+      "empty": "No comments yet.",
+      "anonymousUser": "User"
+    },
+    "fallbackTitle": "Song",
+    "fallbackArtists": "Unknown artist",
+    "errors": {
+      "fetchDetailFailed": "Failed to load details."
+    }
+  },
+  "songDetailPage": {
+    "title": "Song details",
+    "actions": {
+      "refresh": "Refresh",
+      "cancel": "Cancel"
+    },
+    "lyrics": {
+      "syncBadge": "SYNC",
+      "notFound": "No lyrics found.",
+      "seekHint": "Click to seek"
+    },
+    "comments": {
+      "reply": "Reply",
+      "replyingTo": "Replying to:",
+      "directHint": "Leave a comment on this song.",
+      "placeholder": "Write a comment...",
+      "send": "Send",
+      "loginRequired": "Please log in to comment.",
+      "sendFailed": "Failed to send comment."
+    },
+    "errors": {
+      "fetchFailed": "Failed to load data."
+    }
+  },
+  "userMenu": {
+    "avatarAlt": "Avatar",
+    "accountInfo": "Account information",
+    "transactionHistory": "Transaction history",
+    "changePassword": "Change password",
+    "logout": "Log out",
+    "login": "Log in",
+    "register": "Sign up"
+  },
+  "userProfile": {
+    "title": "Account information",
+    "loadingProfile": "Loading profile...",
+    "changeAvatar": "Change avatar",
+    "vipBadge": "VIP",
+    "stats": {
+      "playlists": "Playlists",
+      "favorites": "Favorites"
+    },
+    "labels": {
+      "displayName": "Display name",
+      "username": "Username",
+      "email": "Email",
+      "subscription": "Subscription"
+    },
+    "notUpdated": "Not updated",
+    "subscription": {
+      "daysLeft_one": "{{count}} day remaining",
+      "daysLeft_other": "{{count}} days remaining"
+    },
+    "alerts": {
+      "invalidImageFile": "Please choose an image file.",
+      "avatarUpdated": "Avatar updated successfully.",
+      "avatarUploadFailed": "Failed to upload avatar."
+    }
+  },
+  "playerControls": {
+    "songCoverAlt": "Song cover",
+    "noSongSelected": "Select a song",
+    "unknownArtist": "Artist",
+    "tooltips": {
+      "doubleClickToViewDetail": "Double click to view details",
+      "addToFavorites": "Add to favorites",
+      "removeFromFavorites": "Remove from favorites",
+      "more": "More"
+    },
+    "lyrics": {
+      "title": "Lyrics",
+      "placeholder": "Lyrics will be displayed here..."
+    }
+  },
+  "payment": {
+    "backToPlans": "Back to plans",
+    "chooseMethod": "Choose a payment method",
+    "methods": {
+      "creditCard": "Credit card / Debit card",
+      "shopeePay": "ShopeePay wallet",
+      "zaloPay": "ZaloPay wallet",
+      "vnpayQr": "Pay with VNPAY QR Code"
+    },
+    "creditCard": {
+      "chooseCard": "Choose card:",
+      "newCard": "New card",
+      "autoPayNextCycle": "Auto-pay for the next billing cycle"
+    },
+    "order": {
+      "title": "Order information",
+      "subtitle": "You are choosing the following VIP package:",
+      "packageLabel": "VIP package:",
+      "amount": "Amount:",
+      "total": "Total:"
+    },
+    "processing": "Processing...",
+    "payNow": "PAY NOW",
+    "unknownError": "Unknown",
+    "alerts": {
+      "missingPackageInfo": "Error: Package information not found.",
+      "success": "Payment successful!",
+      "failed": "Payment error: {{error}}"
+    }
+  },
+  "app": {
+    "alerts": {
+      "vipUpgradeThanks": "Thank you for upgrading to VIP!",
+      "loginRequired": "Please log in to use this feature.",
+      "noPermission": "No permission.",
+      "socialAccountCannotChangePassword": "Google/Facebook accounts cannot change password here.",
+      "addToPlaylistSuccess": "Song added to playlist successfully!",
+      "addToPlaylistFailed": "Failed to add song to playlist."
+    }
+  },
+  "playlistDetail": {
+    "notFound": "Playlist not found.",
+    "updatedLabel": "Updated:",
+    "shufflePlay": "SHUFFLE PLAY",
+    "empty": "This playlist has no songs yet.",
+    "songsCount_one": "{{count}} song",
+    "songsCount_other": "{{count}} songs",
+    "tooltips": {
+      "removeFromPlaylist": "Remove from playlist"
+    },
+    "alerts": {
+      "loginToRemove": "Please log in to remove songs from the playlist."
+    },
+    "confirms": {
+      "removeSong": "Remove this song from the playlist?"
+    },
+    "errors": {
+      "fetchFailed": "Failed to load playlist.",
+      "removeFailed": "Failed to remove song.",
+      "removeErrorFallback": "An error occurred while removing the song."
+    }
+  },
+  "listenHistory": {
+    "title": "Recently listened",
+    "playAllButton": "PLAY ALL",
+    "playAllTitle": "Play all",
+    "playAllTitleEmpty": "No songs to play yet",
+    "loading": "Loading listening history...",
+    "empty": "You haven't listened to any songs recently.",
+    "time": {
+      "justNow": "Just now",
+      "minutesAgo_one": "{{count}} minute ago",
+      "minutesAgo_other": "{{count}} minutes ago",
+      "hoursAgo_one": "{{count}} hour ago",
+      "hoursAgo_other": "{{count}} hours ago",
+      "daysAgo_one": "{{count}} day ago",
+      "daysAgo_other": "{{count}} days ago"
+    },
+    "errors": {
+      "loginRequired": "Please log in to view listening history.",
+      "fetchFailed": "Failed to load listening history. Please try again."
+    }
+  },
+  "invoiceHistory": {
+    "loading": "Loading transaction history...",
+    "title": "Transaction history",
+    "empty": "You don't have any transactions yet.",
+    "itemTitle": "Service payment"
+  },
+  "mainContent": {
+    "suggestions": {
+      "title": "Song suggestions"
+    },
+    "charts": {
+      "title": "Music charts",
+      "seeAll": "SEE ALL",
+      "tabs": {
+        "all": "ALL",
+        "vn": "VIETNAM",
+        "foreign": "INTERNATIONAL"
+      }
+    },
+    "partners": {
+      "title": "Music partners"
+    },
+    "artists": {
+      "title": "Artists"
+    },
+    "genres": {
+      "title": "Genres",
+      "songCountShort": "{{count}} songs"
+    }
+  },
+  "chartLibrary": {
+    "loading": "Loading charts...",
+    "title": "All charts",
+    "empty": "No data yet.",
+    "errors": {
+      "fetchFailed": "Failed to load charts (HTTP {{status}}).",
+      "invalidData": "Invalid response data."
+    },
+    "pagination": {
+      "prev": "Previous",
+      "next": "Next",
+      "page": "Page {{page}} / {{total}}"
+    }
+  },
+  "admin": {
+    "layout": {
+      "brand": "Music Admin",
+      "dashboard": "Overview",
+      "songs": "Song management",
+      "albums": "Album management",
+      "artists": "Artist management",
+      "users": "User management",
+      "logout": "Log out",
+      "systemAdmin": "System administration",
+      "admin": "Admin"
+    },
+    "common": {
+      "missingToken": "Missing token. Please log in again.",
+      "genericError": "Something went wrong.",
+      "createSuccess": "Created successfully.",
+      "updateSuccess": "Updated successfully.",
+      "cannotLoadData": "Unable to load data",
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "create": "Create",
+        "update": "Update"
+      }
+    },
+    "dashboard": {
+      "title": "Overview",
+      "totalSongs": "Songs",
+      "totalAlbums": "Albums",
+      "totalUsers": "Users",
+      "totalRevenue": "Revenue",
+      "revenueByMonth": "Revenue by month",
+      "newUsersByMonth": "New users by month",
+      "last12Months": "Last 12 months",
+      "revenueLabel": "Revenue (VND)",
+      "newUsersLabel": "New users"
+    },
+    "userManager": {
+      "title": "User management",
+      "loading": "Loading users...",
+      "columns": {
+        "username": "Username",
+        "email": "Email",
+        "joinDate": "Join date",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Active",
+        "banned": "Locked"
+      },
+      "actions": {
+        "lock": "Lock",
+        "unlock": "Unlock"
+      },
+      "confirms": {
+        "toggleStatus": "Are you sure you want to {{action}} account {{username}}?"
+      },
+      "alerts": {
+        "updateStatusSuccess": "Status updated successfully!",
+        "updateStatusFailed": "Failed to update status."
+      }
+    },
+    "songManager": {
+      "title": "Song management",
+      "loading": "Loading songs...",
+      "addNew": "Add new song",
+      "notUpdated": "Not updated",
+      "columns": {
+        "title": "Title",
+        "artist": "Artist",
+        "listens": "Listens",
+        "likes": "Likes",
+        "actions": "Actions"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "confirms": {
+        "deleteSong": "Are you sure you want to delete this song?"
+      },
+      "alerts": {
+        "deleteSuccess": "Deleted successfully.",
+        "deleteFailed": "Failed to delete song.",
+        "selectSongToUpdateLyrics": "Please select a song to update lyrics.",
+        "selectLrcFile": "Please choose a .lrc file.",
+        "uploadLyricsSuccess": "Lyrics (LRC) uploaded successfully.",
+        "missingRequiredFields": "Please enter the song title and audio URL.",
+        "createSuccess": "Song created successfully!",
+        "updateSuccess": "Updated successfully!"
+      },
+      "errors": {
+        "uploadLyricsFailed": "Lyrics upload failed.",
+        "uploadLyricsErrorFallback": "An error occurred while uploading lyrics.",
+        "genericError": "Something went wrong."
+      },
+      "modal": {
+        "createTitle": "Add new song",
+        "editTitle": "Update song",
+        "createButton": "Create",
+        "updateButton": "Update"
+      },
+      "form": {
+        "titleLabel": "Song title (*)",
+        "titlePlaceholder": "Enter song title",
+        "artistLabel": "Artist (singer)",
+        "artistPlaceholder": "Enter artist name (optional)",
+        "audioUrlLabel": "Audio URL (*)",
+        "audioUrlPlaceholder": "MP3 URL or filename in uploads/audio",
+        "imageUrlLabel": "Cover image URL",
+        "imageUrlPlaceholder": "JPG/PNG URL or filename"
+      },
+      "lyrics": {
+        "optional": "Lyrics (optional)",
+        "syncLabel": "Synced lyrics (.lrc file)",
+        "uploadButton": "Upload LRC",
+        "uploading": "Uploading...",
+        "note": "If you don't upload an LRC file, the song detail page will show only plain lyrics (no sync)."
+      }
+    },
+    "albumManager": {
+      "title": "Album management",
+      "loading": "Loading albums...",
+      "addNew": "Add album",
+      "empty": "No albums yet.",
+      "columns": {
+        "cover": "Cover",
+        "title": "Title",
+        "artists": "Artists",
+        "releaseDate": "Release date",
+        "actions": "Actions"
+      },
+      "confirms": {
+        "deleteAlbum": "Are you sure you want to delete this album?"
+      },
+      "alerts": {
+        "deleteSuccess": "Deleted.",
+        "deleteFailed": "Delete failed.",
+        "missingTitle": "Please enter the album title."
+      },
+      "errors": {
+        "fetchFailed": "Failed to load albums (HTTP {{status}})."
+      },
+      "modal": {
+        "createTitle": "Add album",
+        "editTitle": "Update album"
+      },
+      "form": {
+        "titleLabel": "Album title",
+        "titlePlaceholder": "Enter album title",
+        "releaseDateLabel": "Release date",
+        "coverLabel": "Cover image (upload)",
+        "artistsLabel": "Artists",
+        "noArtistsHint": "No artists yet. Please add artists first.",
+        "noArtistsSelected": "No artists selected.",
+        "searchArtistPlaceholder": "Search artists by name..."
+      }
+    },
+    "artistManager": {
+      "title": "Artist management",
+      "loading": "Loading artists...",
+      "addNew": "Add artist",
+      "empty": "No artists yet.",
+      "columns": {
+        "avatar": "Avatar",
+        "name": "Name",
+        "bio": "Bio",
+        "actions": "Actions"
+      },
+      "confirms": {
+        "deleteArtist": "Are you sure you want to delete this artist?"
+      },
+      "alerts": {
+        "deleteSuccess": "Deleted.",
+        "deleteFailed": "Delete failed.",
+        "missingName": "Please enter the artist name."
+      },
+      "errors": {
+        "fetchFailed": "Failed to load artists (HTTP {{status}})."
+      },
+      "modal": {
+        "createTitle": "Add artist",
+        "editTitle": "Update artist"
+      },
+      "form": {
+        "nameLabel": "Artist name",
+        "namePlaceholder": "Enter artist name",
+        "bioLabel": "Bio",
+        "bioPlaceholder": "Enter bio (optional)",
+        "avatarLabel": "Avatar"
+      }
     }
   }
 }

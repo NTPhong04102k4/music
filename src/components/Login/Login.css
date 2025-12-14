@@ -83,6 +83,12 @@
   color: var(--text-secondary);
   cursor: pointer;
   font-size: 18px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .password-toggle:hover {
   color: var(--player-primary-color);
@@ -100,6 +106,10 @@
 .forgot-password {
   color: var(--text-secondary);
   text-decoration: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
 }
 .forgot-password:hover {
   color: var(--player-primary-color);

@@ -12,6 +12,7 @@ function Login({ onClose, onLoginSuccess }) {
   const [isRegisterMode, setIsRegisterMode] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form Data
   const [email, setEmail] = useState(""); // Dùng chung cho login (làm username) và register
@@ -29,6 +30,7 @@ function Login({ onClose, onLoginSuccess }) {
     setFullName("");
     setConfirmPassword("");
     setAgreeTerms(false);
+    setShowPassword(false);
   };
 
   const toggleMode = () => {
@@ -37,6 +39,8 @@ function Login({ onClose, onLoginSuccess }) {
   };
 
   const handleLogin = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const response = await fetch(`${BACKEND_URL}/api/login`, {
         method: "POST",
@@ -44,7 +48,7 @@ function Login({ onClose, onLoginSuccess }) {
         body: JSON.stringify({ email, password }), // 'email' ở đây là input username/email
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (response.ok) {
         localStorage.setItem("token", data.token);
@@ -56,6 +60,8 @@ function Login({ onClose, onLoginSuccess }) {
       }
     } catch (error) {
       alert(t("errors.serverConnection"));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -69,6 +75,8 @@ function Login({ onClose, onLoginSuccess }) {
       return;
     }
 
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const response = await fetch(`${BACKEND_URL}/api/register`, {
         method: "POST",
@@ -81,7 +89,7 @@ function Login({ onClose, onLoginSuccess }) {
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (response.ok) {
         alert(t("auth.alerts.registerSuccess"));
@@ -92,6 +100,8 @@ function Login({ onClose, onLoginSuccess }) {
       }
     } catch (error) {
       alert(t("errors.serverConnection"));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -114,8 +124,13 @@ function Login({ onClose, onLoginSuccess }) {
 
   return (
     <div className="auth-modal-overlay" onClick={onClose}>
-      <div className="auth-modal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="auth-close-btn" onClick={onClose}>
+      <div
+        className="auth-modal-content"
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button type="button" className="auth-close-btn" onClick={onClose}>
           <IoClose />
         </button>
 
@@ -144,12 +159,17 @@ function Login({ onClose, onLoginSuccess }) {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-                <span
+                <button
+                  type="button"
                   className="password-toggle"
-                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={
+                    showPassword ? t("common.hide") : t("common.show")
+                  }
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((v) => !v)}
                 >
                   {showPassword ? <IoEyeOutline /> : <IoEyeOffOutline />}
-                </span>
+                </button>
               </div>
 
               <div className="auth-options">
@@ -229,7 +249,11 @@ function Login({ onClose, onLoginSuccess }) {
           )}
 
           {/* Nút Submit */}
-          <button type="submit" className="auth-submit-btn">
+          <button
+            type="submit"
+            className="auth-submit-btn"
+            disabled={isSubmitting}
+          >
             {isRegisterMode ? t("auth.submitRegister") : t("auth.submitLogin")}
           </button>
         </form>
@@ -245,6 +269,7 @@ function Login({ onClose, onLoginSuccess }) {
               className="auth-social-btn facebook"
               type="button"
               onClick={handleFacebookLogin}
+              disabled={isSubmitting}
             >
               <FaFacebookF /> Facebook
             </button>
@@ -252,6 +277,7 @@ function Login({ onClose, onLoginSuccess }) {
               className="auth-social-btn google"
               type="button"
               onClick={handleGoogleLogin}
+              disabled={isSubmitting}
             >
               <FaGoogle /> Google
             </button>

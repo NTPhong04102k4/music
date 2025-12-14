@@ -39,9 +39,9 @@ function VipUpgrade({ onBuy }) {
         if (subData && subData.packageId) setCurrentSub(subData);
         else setCurrentSub(null);
       })
-      .catch((err) => console.error("Lỗi tải gói cước:", err))
+      .catch((err) => console.error(t("vip.errors.loadPackagesFailed"), err))
       .finally(() => setLoading(false));
-  }, [BACKEND_URL]);
+  }, [BACKEND_URL, t]);
 
   const refreshSubscription = async () => {
     const token = localStorage.getItem("token");
@@ -120,7 +120,7 @@ function VipUpgrade({ onBuy }) {
         rawPrice: pkg.price,
       });
     } else {
-      console.error("Lỗi: Prop 'onBuy' chưa được truyền vào VipUpgrade!");
+      console.error(t("vip.errors.missingOnBuyProp"));
       alert(t("errors.featureTemporarilyUnavailable"));
     }
   };
@@ -160,7 +160,7 @@ function VipUpgrade({ onBuy }) {
             </div>
             <div className="vip-current-plan-row">
               <span className="vip-current-plan-name">
-                {currentSub.planName || "Premium"}
+                {currentSub.planName || t("vip.currentPlan.defaultPlanName")}
               </span>
               <span className="vip-current-plan-meta">
                 {typeof currentSub.daysLeft === "number"

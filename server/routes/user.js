@@ -468,7 +468,10 @@ router.post(
       );
 
       if (existing.length > 0) {
-        return res.status(400).json({ error: "Bài hát đã có trong playlist" });
+        return res.status(400).json({
+          errorCode: "SONG_ALREADY_IN_PLAYLIST",
+          error: "Bài hát đã có trong playlist",
+        });
       }
 
       const [maxOrder] = await pool.execute(

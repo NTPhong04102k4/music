@@ -8,6 +8,7 @@ import {
   IoAdd,
 } from "react-icons/io5"; // Thêm import icon
 import { SONG_STATS_CHANGED_EVENT } from "../../utils/songEvents";
+import { useTranslation } from "react-i18next";
 
 function MainContent({
   onPlaySong,
@@ -22,6 +23,10 @@ function MainContent({
   favorites,
   onToggleFavorite,
 }) {
+  const { t } = useTranslation();
+  const BACKEND_URL =
+    process.env.REACT_APP_BACKEND_URL || "http://localhost:5001";
+
   const [suggestions, setSuggestions] = useState([]);
   const [chartData, setChartData] = useState([]);
   const [partners, setPartners] = useState([]);
@@ -31,28 +36,30 @@ function MainContent({
 
   // --- FETCH DATA ---
   const fetchSuggestions = () => {
-    fetch("http://localhost:5001/api/suggestions")
+    fetch(`${BACKEND_URL}/api/suggestions`)
       .then((response) => response.json())
       .then((data) => setSuggestions(data))
       .catch((error) => console.error("Error fetching suggestions:", error));
   };
 
   const fetchChartData = () => {
-    fetch(`http://localhost:5001/api/charts?category=${chartCategory}`)
+    fetch(
+      `${BACKEND_URL}/api/charts?category=${encodeURIComponent(chartCategory)}`
+    )
       .then((response) => response.json())
       .then((data) => setChartData(data))
       .catch((error) => console.error("Error fetching charts:", error));
   };
 
   const fetchPartners = () => {
-    fetch("http://localhost:5001/api/partners")
+    fetch(`${BACKEND_URL}/api/partners`)
       .then((response) => response.json())
       .then((data) => setPartners(data))
       .catch((error) => console.error("Error fetching partners:", error));
   };
 
   const fetchArtistsPreview = () => {
-    fetch("http://localhost:5001/api/artists?page=1&limit=5")
+    fetch(`${BACKEND_URL}/api/artists?page=1&limit=5`)
       .then((response) => response.json())
       .then((data) => {
         const list = Array.isArray(data?.data) ? data.data : [];
@@ -65,7 +72,7 @@ function MainContent({
   };
 
   const fetchGenresPreview = () => {
-    fetch("http://localhost:5001/api/genres?page=1&limit=5")
+    fetch(`${BACKEND_URL}/api/genres?page=1&limit=5`)
       .then((response) => response.json())
       .then((data) => {
         const list = Array.isArray(data?.data) ? data.data : [];
@@ -79,10 +86,10 @@ function MainContent({
 
   useEffect(() => {
     fetchSuggestions();
-    fetchChartData();
     fetchPartners();
     fetchArtistsPreview();
     fetchGenresPreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Global refresh: sau khi like/unlike ở bất kỳ đâu, gọi GET lại để đồng bộ UI toàn dự án
@@ -106,10 +113,14 @@ function MainContent({
       {/* === GỢI Ý BÀI HÁT === */}
       <section className="content-section">
         <div className="section-header">
-          <h2>Gợi Ý Bài Hát</h2>
-          <button className="zm-btn refresh-btn" onClick={fetchSuggestions}>
+          <h2>{t("mainContent.suggestions.title")}</h2>
+          <button
+            type="button"
+            className="zm-btn refresh-btn"
+            onClick={fetchSuggestions}
+          >
             <IoRefresh />
-            LÀM MỚI
+            {t("common.refresh")}
           </button>
         </div>
 
@@ -149,12 +160,13 @@ function MainContent({
               {/* === SỬA: Thêm khu vực Action (Yêu thích & Tùy chọn) === */}
               <div className="song-item-actions">
                 <button
+                  type="button"
                   className="action-btn"
                   onClick={(e) => {
                     e.stopPropagation(); // Ngăn phát nhạc khi bấm nút này
                     if (onOpenSongAction) onOpenSongAction(item);
                   }}
-                  title="Khác"
+                  title={t("common.more")}
                 >
                   <IoEllipsisHorizontal />
                 </button>
@@ -168,21 +180,21 @@ function MainContent({
       {/* (Giữ nguyên phần này hoặc áp dụng tương tự nếu muốn) */}
       <section className="content-section">
         <div className="section-header">
-          <h2>Bảng Xếp Hạng Nhạc</h2>
+          <h2>{t("mainContent.charts.title")}</h2>
           <div className="chart-tabs">
             <button
               type="button"
               className={`chart-tab ${chartCategory === "all" ? "active" : ""}`}
               onClick={() => setChartCategory("all")}
             >
-              TẤT CẢ
+              {t("mainContent.charts.tabs.all")}
             </button>
             <button
               type="button"
               className={`chart-tab ${chartCategory === "vn" ? "active" : ""}`}
               onClick={() => setChartCategory("vn")}
             >
-              NHẠC VIỆT
+              {t("mainContent.charts.tabs.vn")}
             </button>
             <button
               type="button"
@@ -191,7 +203,7 @@ function MainContent({
               }`}
               onClick={() => setChartCategory("foreign")}
             >
-              NHẠC NGOẠI
+              {t("mainContent.charts.tabs.foreign")}
             </button>
           </div>
           <button
@@ -199,7 +211,7 @@ function MainContent({
             className="see-all"
             onClick={() => onViewCharts && onViewCharts(chartCategory)}
           >
-            TẤT CẢ <IoChevronForward />
+            {t("mainContent.charts.seeAll")} <IoChevronForward />
           </button>
         </div>
         <div className="chart-container">
@@ -236,6 +248,7 @@ function MainContent({
                 </div>
                 <div className="chart-item-right">
                   <button
+                    type="button"
                     className="player-btn icon-btn play-pause-btn chart-play-btn"
                     onClick={() => onPlaySong(song, chartData)}
                   >
@@ -250,7 +263,7 @@ function MainContent({
       {/* === ĐỐI TÁC === */}
       <section className="content-section partners-section">
         <div className="section-header">
-          <h2>Đối Tác Âm Nhạc</h2>
+          <h2>{t("mainContent.partners.title")}</h2>
         </div>
         <div className="carousel-grid five-columns">
           {partners.map((partner) => (
@@ -271,7 +284,7 @@ function MainContent({
       {/* === NGHỆ SĨ === */}
       <section className="content-section">
         <div className="section-header">
-          <h2>Nghệ Sĩ</h2>
+          <h2>{t("mainContent.artists.title")}</h2>
         </div>
 
         <div className="artist-preview-grid">
@@ -304,12 +317,14 @@ function MainContent({
             type="button"
             className="artist-preview-card artist-preview-viewall"
             onClick={() => onViewArtists && onViewArtists()}
-            title="View All"
+            title={t("common.viewAll")}
           >
             <div className="artist-preview-plus">
               <IoAdd />
             </div>
-            <div className="artist-preview-viewall-text">View All</div>
+            <div className="artist-preview-viewall-text">
+              {t("common.viewAll")}
+            </div>
           </button>
         </div>
       </section>
@@ -317,7 +332,7 @@ function MainContent({
       {/* === THỂ LOẠI === */}
       <section className="content-section">
         <div className="section-header">
-          <h2>Thể Loại</h2>
+          <h2>{t("mainContent.genres.title")}</h2>
         </div>
 
         <div className="genre-preview-grid">
@@ -332,7 +347,9 @@ function MainContent({
               <div className="genre-preview-name">{g.name}</div>
               {g.songCount != null ? (
                 <div className="genre-preview-count">
-                  {Number(g.songCount || 0)} bài
+                  {t("mainContent.genres.songCountShort", {
+                    count: Number(g.songCount || 0),
+                  })}
                 </div>
               ) : null}
             </button>
@@ -342,12 +359,14 @@ function MainContent({
             type="button"
             className="genre-preview-card genre-preview-viewall"
             onClick={() => onViewGenres && onViewGenres()}
-            title="View All"
+            title={t("common.viewAll")}
           >
             <div className="artist-preview-plus">
               <IoAdd />
             </div>
-            <div className="artist-preview-viewall-text">View All</div>
+            <div className="artist-preview-viewall-text">
+              {t("common.viewAll")}
+            </div>
           </button>
         </div>
       </section>

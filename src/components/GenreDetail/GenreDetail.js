@@ -2,14 +2,18 @@ import React, { useEffect, useMemo, useState } from "react";
 import "../MainContent/MainContent.css";
 import "./GenreDetail.css";
 import { IoChevronBack, IoPlay } from "react-icons/io5";
+import { useTranslation } from "react-i18next";
 
 function GenreDetail({ genreId, onBack, onPlaySong }) {
+  const { t } = useTranslation();
   const [genre, setGenre] = useState(null);
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const genreIdNormalized = useMemo(() => Number(genreId), [genreId]);
+  const BACKEND_URL =
+    process.env.REACT_APP_BACKEND_URL || "http://localhost:5001";
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -17,13 +21,16 @@ function GenreDetail({ genreId, onBack, onPlaySong }) {
       setLoading(true);
       try {
         const res = await fetch(
-          `http://localhost:5001/api/genres/${genreIdNormalized}`
+          `${BACKEND_URL}/api/genres/${genreIdNormalized}`
         );
         const data = await res.json();
         if (!res.ok) {
           setGenre(null);
           setSongs([]);
-          setError(data?.error || `Lỗi tải thể loại (HTTP ${res.status})`);
+          setError(
+            data?.error ||
+              t("genreDetail.errors.fetchFailed", { status: res.status })
+          );
           return;
         }
 
@@ -32,7 +39,7 @@ function GenreDetail({ genreId, onBack, onPlaySong }) {
       } catch (e) {
         setGenre(null);
         setSongs([]);
-        setError("Lỗi kết nối server");
+        setError(t("errors.serverConnection"));
       } finally {
         setLoading(false);
       }
@@ -42,12 +49,13 @@ function GenreDetail({ genreId, onBack, onPlaySong }) {
     else {
       setGenre(null);
       setSongs([]);
-      setError("genreId không hợp lệ");
+      setError(t("genreDetail.errors.invalidGenreId"));
       setLoading(false);
     }
-  }, [genreIdNormalized]);
+  }, [genreIdNormalized, BACKEND_URL, t]);
 
-  if (loading) return <div style={{ padding: 20 }}>Đang tải thể loại...</div>;
+  if (loading)
+    return <div style={{ padding: 20 }}>{t("genreDetail.loading")}</div>;
 
   return (
     <div className="main-content genre-detail">
@@ -55,9 +63,9 @@ function GenreDetail({ genreId, onBack, onPlaySong }) {
         <div className="section-header genre-detail-header">
           <div className="genre-detail-title">
             <button className="genre-back-btn" onClick={onBack} type="button">
-              <IoChevronBack /> Quay lại
+              <IoChevronBack /> {t("common.back")}
             </button>
-            <h2>Chi Tiết Thể Loại</h2>
+            <h2>{t("genreDetail.title")}</h2>
           </div>
         </div>
 
@@ -70,13 +78,17 @@ function GenreDetail({ genreId, onBack, onPlaySong }) {
               {genre.description ? (
                 <div className="genre-hero-desc">{genre.description}</div>
               ) : (
-                <div className="genre-hero-desc empty">Chưa có mô tả.</div>
+                <div className="genre-hero-desc empty">
+                  {t("genreDetail.emptyDescription")}
+                </div>
               )}
               <div className="genre-hero-stats">
                 <span className="genre-hero-count">
                   {Number(genre.songCount ?? songs.length ?? 0)}
                 </span>
-                <span className="genre-hero-count-label">bài hát</span>
+                <span className="genre-hero-count-label">
+                  {t("genreDetail.songCountLabel")}
+                </span>
               </div>
               <div className="genre-hero-actions">
                 <button
@@ -85,7 +97,7 @@ function GenreDetail({ genreId, onBack, onPlaySong }) {
                   disabled={!songs.length}
                   onClick={() => songs.length && onPlaySong(songs[0], songs)}
                 >
-                  <IoPlay /> Phát tất cả
+                  <IoPlay /> {t("genreDetail.playAll")}
                 </button>
               </div>
             </div>
@@ -94,12 +106,14 @@ function GenreDetail({ genreId, onBack, onPlaySong }) {
 
         <div className="genre-songs">
           <div className="genre-songs-title">
-            <h3>Bài hát</h3>
+            <h3>{t("genreDetail.songsTitle")}</h3>
             <span className="genre-songs-count">{songs.length}</span>
           </div>
 
           {songs.length === 0 ? (
-            <div className="genre-empty-songs">Chưa có bài hát.</div>
+            <div className="genre-empty-songs">
+              {t("genreDetail.emptySongs")}
+            </div>
           ) : (
             <div className="song-list-grid three-columns">
               {songs.map((s) => (
@@ -141,5 +155,3 @@ function GenreDetail({ genreId, onBack, onPlaySong }) {
 }
 
 export default GenreDetail;
-
-

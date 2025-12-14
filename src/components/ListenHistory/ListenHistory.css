@@ -131,3 +131,9 @@
   margin-top: 50px;
   font-style: italic;
 }
+
+.history-status {
+  text-align: center;
+  color: var(--text-secondary, #a0a0a0);
+  margin-top: 50px;
+}

@@ -1,5 +1,6 @@
-import React, { useEffect, useImperativeHandle, useState } from "react";
+import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
 import "./PlayerControls.css";
+import { useTranslation } from "react-i18next";
 
 import {
   IoExpand,
@@ -37,85 +38,116 @@ const PlayerControls = React.forwardRef(function PlayerControls(
   },
   ref
 ) {
+  const { t } = useTranslation();
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(80);
   const [audio, setAudio] = useState(null);
+  const audioRef = useRef(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isShuffled, setIsShuffled] = useState(false);
   const [repeatMode, setRepeatMode] = useState(0);
+  const repeatModeRef = useRef(0);
+  const onNextRef = useRef(onNext);
+  const onTimeUpdateRef = useRef(onTimeUpdate);
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(80);
   const [showLyrics, setShowLyrics] = useState(false);
 
   // --- LOGIC AUDIO (Giữ nguyên) ---
   useEffect(() => {
+    repeatModeRef.current = repeatMode;
+  }, [repeatMode]);
+
+  useEffect(() => {
+    onNextRef.current = onNext;
+  }, [onNext]);
+
+  useEffect(() => {
+    onTimeUpdateRef.current = onTimeUpdate;
+  }, [onTimeUpdate]);
+
+  useEffect(() => {
     if (currentSong && currentSong.audioUrl) {
-      if (audio) {
-        audio.pause();
-        audio.currentTime = 0;
-        audio.src = "";
+      const prevAudio = audioRef.current;
+      if (prevAudio) {
+        prevAudio.pause();
+        prevAudio.currentTime = 0;
+        prevAudio.src = "";
       }
+
       const newAudio = new Audio(currentSong.audioUrl);
       newAudio.volume = volume / 100;
 
-      newAudio.addEventListener("loadeddata", () => {
+      const handleLoadedData = () => {
         setDuration(newAudio.duration);
         setIsPlaying(true);
-      });
+      };
 
-      newAudio.addEventListener("timeupdate", () => {
+      const handleTimeUpdate = () => {
         const current = newAudio.currentTime;
         const total = newAudio.duration;
         setCurrentTime(current);
         setProgress(total ? (current / total) * 100 : 0);
-        if (onTimeUpdate) {
-          onTimeUpdate(current);
-        }
-      });
+        const cb = onTimeUpdateRef.current;
+        if (typeof cb === "function") cb(current);
+      };
 
-      newAudio.addEventListener("ended", () => {
-        if (repeatMode === 2) {
+      const handleEnded = () => {
+        if (repeatModeRef.current === 2) {
           newAudio.currentTime = 0;
           newAudio.play();
-        } else if (onNext) {
-          onNext();
+          return;
+        }
+
+        const next = onNextRef.current;
+        if (typeof next === "function") {
+          next();
         } else {
           setIsPlaying(false);
           setProgress(0);
         }
-      });
+      };
+
+      newAudio.addEventListener("loadeddata", handleLoadedData);
+      newAudio.addEventListener("timeupdate", handleTimeUpdate);
+      newAudio.addEventListener("ended", handleEnded);
 
       setAudio(newAudio);
+      audioRef.current = newAudio;
       setProgress(0);
 
       return () => {
-        if (newAudio) {
-          newAudio.pause();
-          newAudio.src = "";
-          newAudio.removeEventListener("loadeddata", () => {});
-          newAudio.removeEventListener("timeupdate", () => {});
-          newAudio.removeEventListener("ended", () => {});
+        newAudio.pause();
+        newAudio.src = "";
+        newAudio.removeEventListener("loadeddata", handleLoadedData);
+        newAudio.removeEventListener("timeupdate", handleTimeUpdate);
+        newAudio.removeEventListener("ended", handleEnded);
+
+        if (audioRef.current === newAudio) {
+          audioRef.current = null;
         }
       };
     } else if (!currentSong) {
-      if (audio) {
-        audio.pause();
-        setAudio(null);
-      }
+      const prevAudio = audioRef.current;
+      if (prevAudio) prevAudio.pause();
+      audioRef.current = null;
+      setAudio(null);
     }
-  }, [currentSong, onNext, repeatMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSong]);
 
   useEffect(() => {
-    if (audio) {
+    const a = audioRef.current;
+    if (a) {
       if (isPlaying) {
-        audio.play().catch((error) => {
+        a.play().catch((error) => {
           console.error("Error playing audio:", error);
           setIsPlaying(false);
         });
       } else {
-        audio.pause();
+        a.pause();
       }
     }
   }, [isPlaying, audio]);
@@ -128,9 +160,8 @@ const PlayerControls = React.forwardRef(function PlayerControls(
   }, [isPlaying, onPlayStateChange]);
 
   useEffect(() => {
-    if (audio) {
-      audio.volume = volume / 100;
-    }
+    const a = audioRef.current;
+    if (a) a.volume = volume / 100;
   }, [volume, audio]);
 
   // Seek from external (e.g., synced lyrics click)
@@ -148,7 +179,7 @@ const PlayerControls = React.forwardRef(function PlayerControls(
   }, [seekToSeconds, audio, onSeekHandled]);
 
   const handlePlayPause = () => {
-    if (audio) setIsPlaying(!isPlaying);
+    if (audioRef.current) setIsPlaying(!isPlaying);
   };
 
   // Expose controls to parent (App) for list play/pause buttons
@@ -156,31 +187,33 @@ const PlayerControls = React.forwardRef(function PlayerControls(
     ref,
     () => ({
       togglePlayPause: () => {
-        if (audio) setIsPlaying((prev) => !prev);
+        if (audioRef.current) setIsPlaying((prev) => !prev);
       },
       play: () => {
-        if (audio) setIsPlaying(true);
+        if (audioRef.current) setIsPlaying(true);
       },
       pause: () => {
-        if (audio) setIsPlaying(false);
+        if (audioRef.current) setIsPlaying(false);
       },
       isPlaying: () => !!isPlaying,
     }),
-    [audio, isPlaying]
+    [isPlaying]
   );
 
   const handleProgressChange = (e) => {
-    if (audio) {
+    const a = audioRef.current;
+    if (a) {
       const newProgress = e.target.value;
       setProgress(newProgress);
-      audio.currentTime = (newProgress / 100) * duration;
+      a.currentTime = (newProgress / 100) * duration;
     }
   };
 
   const handleShuffle = () => setIsShuffled(!isShuffled);
   const handleRepeat = () => setRepeatMode((prev) => (prev + 1) % 3);
   const handlePrev = () => {
-    if (audio && audio.currentTime > 3) audio.currentTime = 0;
+    const a = audioRef.current;
+    if (a && a.currentTime > 3) a.currentTime = 0;
     else if (onPrev) onPrev();
   };
   const handleNext = () => {
@@ -222,7 +255,7 @@ const PlayerControls = React.forwardRef(function PlayerControls(
           onDoubleClick={() =>
             currentSong && onOpenSongDetail && onOpenSongDetail(currentSong)
           }
-          title="Double click để xem chi tiết"
+          title={t("playerControls.tooltips.doubleClickToViewDetail")}
         >
           <img
             src={
@@ -232,7 +265,7 @@ const PlayerControls = React.forwardRef(function PlayerControls(
                   "https://placehold.co/60x60/a64883/fff?text=No+Image"
                 : "https://placehold.co/60x60/130c1c/fff?text=NCT"
             }
-            alt="Song Cover"
+            alt={t("playerControls.songCoverAlt")}
             onError={(e) => {
               e.target.src =
                 "https://placehold.co/60x60/a64883/fff?text=No+Image";
@@ -247,22 +280,31 @@ const PlayerControls = React.forwardRef(function PlayerControls(
           onDoubleClick={() =>
             currentSong && onOpenSongDetail && onOpenSongDetail(currentSong)
           }
-          title="Double click để xem chi tiết"
+          title={t("playerControls.tooltips.doubleClickToViewDetail")}
         >
           <div className="song-name">
-            {currentSong ? currentSong.title : "Chọn bài hát"}
+            {currentSong
+              ? currentSong.title
+              : t("playerControls.noSongSelected")}
           </div>
           <div className="artist-name">
-            {currentSong ? currentSong.artists : "Nghệ sĩ"}
+            {currentSong
+              ? currentSong.artists
+              : t("playerControls.unknownArtist")}
           </div>
         </div>
         <div className="song-actions">
           {/* Nút Yêu thích */}
           <button
+            type="button"
             className={`player-btn icon-btn ${isFavorite ? "active" : ""}`}
             onClick={onToggleFavorite}
             disabled={!currentSong}
-            title={isFavorite ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
+            title={
+              isFavorite
+                ? t("playerControls.tooltips.removeFromFavorites")
+                : t("playerControls.tooltips.addToFavorites")
+            }
           >
             {isFavorite ? (
               <IoHeart className="heart-active" />
@@ -272,11 +314,12 @@ const PlayerControls = React.forwardRef(function PlayerControls(
           </button>
 
           <button
+            type="button"
             className="player-btn icon-btn"
             // Khi click, gọi hàm mở modal và truyền bài hát hiện tại vào
             onClick={() => currentSong && onOpenSongAction(currentSong)}
             disabled={!currentSong}
-            title="Khác"
+            title={t("playerControls.tooltips.more")}
           >
             <IoEllipsisHorizontal />
           </button>
@@ -286,25 +329,36 @@ const PlayerControls = React.forwardRef(function PlayerControls(
       <div className="player-center">
         <div className="player-controls-buttons">
           <button
+            type="button"
             className={`player-btn icon-btn ${isShuffled ? "active" : ""}`}
             onClick={handleShuffle}
           >
             <IoShuffleOutline />
           </button>
-          <button className="player-btn icon-btn" onClick={handlePrev}>
+          <button
+            type="button"
+            className="player-btn icon-btn"
+            onClick={handlePrev}
+          >
             <IoPlaySkipBack />
           </button>
           <button
+            type="button"
             className="player-btn icon-btn play-pause-btn"
             onClick={handlePlayPause}
             disabled={!audio}
           >
             {isPlaying ? <IoPause /> : <IoPlay />}
           </button>
-          <button className="player-btn icon-btn" onClick={handleNext}>
+          <button
+            type="button"
+            className="player-btn icon-btn"
+            onClick={handleNext}
+          >
             <IoPlaySkipForward />
           </button>
           <button
+            type="button"
             className={`player-btn icon-btn ${repeatMode > 0 ? "active" : ""}`}
             onClick={handleRepeat}
           >
@@ -333,8 +387,14 @@ const PlayerControls = React.forwardRef(function PlayerControls(
       </div>
 
       <div className="player-right">
-        <button className="player-btn quality-btn">128kbps</button>
-        <button className="player-btn icon-btn" onClick={handleMute}>
+        <button type="button" className="player-btn quality-btn">
+          128kbps
+        </button>
+        <button
+          type="button"
+          className="player-btn icon-btn"
+          onClick={handleMute}
+        >
           {isMuted || Math.round(volume) === 0 ? (
             <IoVolumeMuteOutline />
           ) : volume < 50 ? (
@@ -357,6 +417,7 @@ const PlayerControls = React.forwardRef(function PlayerControls(
         </div>
         <span className="divider"></span>
         <button
+          type="button"
           className={`player-btn icon-btn ${showLyrics ? "active" : ""}`}
           onClick={() => setShowLyrics(!showLyrics)}
         >
@@ -364,6 +425,7 @@ const PlayerControls = React.forwardRef(function PlayerControls(
         </button>
         {/* Nút Danh sách phát */}
         <button
+          type="button"
           className={`player-btn icon-btn ${showPlaylistQueue ? "active" : ""}`}
           onClick={onTogglePlaylist}
         >
@@ -374,11 +436,13 @@ const PlayerControls = React.forwardRef(function PlayerControls(
       {showLyrics && (
         <div className="lyrics-panel">
           <div className="lyrics-header">
-            <h3>Lời bài hát</h3>
-            <button onClick={() => setShowLyrics(false)}>×</button>
+            <h3>{t("playerControls.lyrics.title")}</h3>
+            <button type="button" onClick={() => setShowLyrics(false)}>
+              ×
+            </button>
           </div>
           <div className="lyrics-content">
-            <p>Lời bài hát sẽ được hiển thị ở đây...</p>
+            <p>{t("playerControls.lyrics.placeholder")}</p>
           </div>
         </div>
       )}

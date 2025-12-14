@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./AlbumManager.css";
+import { useTranslation } from "react-i18next";
 
 function AlbumManager() {
+  const { t } = useTranslation();
   const [albums, setAlbums] = useState([]);
   const [artists, setArtists] = useState([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -52,7 +54,7 @@ function AlbumManager() {
       const token = localStorage.getItem("token");
       if (!token) {
         setAlbums([]);
-        setError("Thiếu token. Vui lòng đăng nhập lại.");
+        setError(t("admin.common.missingToken"));
         return;
       }
       const res = await fetch("http://localhost:5001/api/admin/albums", {
@@ -63,12 +65,13 @@ function AlbumManager() {
       else {
         setAlbums([]);
         setError(
-          data?.error || `Lỗi khi tải danh sách album (HTTP ${res.status})`
+          data?.error ||
+            t("admin.albumManager.errors.fetchFailed", { status: res.status })
         );
       }
     } catch (e) {
       console.error("Fetch albums error:", e);
-      setError("Lỗi kết nối server");
+      setError(t("errors.serverConnection"));
     } finally {
       if (opts?.showGlobalLoading) setIsInitialLoading(false);
     }
@@ -141,7 +144,7 @@ function AlbumManager() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa album này?")) return;
+    if (!window.confirm(t("admin.albumManager.confirms.deleteAlbum"))) return;
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`http://localhost:5001/api/admin/albums/${id}`, {
@@ -149,17 +152,21 @@ function AlbumManager() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (!res.ok) return alert(data?.error || "Xóa thất bại");
-      alert(data?.message || "Đã xóa");
+      if (!res.ok)
+        return alert(
+          data?.error || t("admin.albumManager.alerts.deleteFailed")
+        );
+      alert(data?.message || t("admin.albumManager.alerts.deleteSuccess"));
       refreshData();
     } catch (e) {
-      alert("Lỗi kết nối server");
+      alert(t("errors.serverConnection"));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title.trim()) return alert("Vui lòng nhập tên album");
+    if (!form.title.trim())
+      return alert(t("admin.albumManager.alerts.missingTitle"));
 
     const url = isEditing
       ? `http://localhost:5001/api/admin/albums/${editingId}`
@@ -180,14 +187,17 @@ function AlbumManager() {
         body: fd,
       });
       const data = await res.json();
-      if (!res.ok) return alert(data?.error || "Có lỗi xảy ra");
+      if (!res.ok) return alert(data?.error || t("admin.common.genericError"));
       alert(
-        data?.message || (isEditing ? "Cập nhật thành công" : "Thêm thành công")
+        data?.message ||
+          (isEditing
+            ? t("admin.common.updateSuccess")
+            : t("admin.common.createSuccess"))
       );
       closeModal();
       refreshData();
     } catch (e) {
-      alert("Lỗi kết nối server");
+      alert(t("errors.serverConnection"));
     }
   };
 
@@ -232,27 +242,27 @@ function AlbumManager() {
   }, [artistQuery, artists, form.artistIds]);
 
   if (isInitialLoading)
-    return <div style={{ padding: 20 }}>Đang tải album...</div>;
+    return <div style={{ padding: 20 }}>{t("admin.albumManager.loading")}</div>;
 
   return (
     <div className="album-manager">
       <div className="manager-header">
-        <h2>Quản Lý Album</h2>
+        <h2>{t("admin.albumManager.title")}</h2>
         <div style={{ display: "flex", gap: 10 }}>
           <button
             className="admin-btn"
             type="button"
             onClick={refreshData}
             disabled={isRefreshing}
-            title="Làm mới dữ liệu"
+            title={t("common.refresh")}
           >
             <span
               className={`reload-spinner ${isRefreshing ? "" : "hidden"}`}
             />
-            ↻ Làm mới
+            ↻ {t("common.refresh")}
           </button>
           <button className="admin-btn btn-primary" onClick={openAdd}>
-            + Thêm Album
+            + {t("admin.albumManager.addNew")}
           </button>
         </div>
       </div>
@@ -260,7 +270,7 @@ function AlbumManager() {
       {error && (
         <div className="admin-card" style={{ borderLeft: "4px solid #e35050" }}>
           <div style={{ color: "#e35050", fontWeight: 600, marginBottom: 6 }}>
-            Không tải được dữ liệu
+            {t("admin.common.cannotLoadData")}
           </div>
           <div style={{ color: "#555" }}>{error}</div>
         </div>
@@ -271,11 +281,11 @@ function AlbumManager() {
           <thead>
             <tr>
               <th>ID</th>
-              <th>Ảnh bìa</th>
-              <th>Tiêu đề</th>
-              <th>Nghệ sĩ</th>
-              <th>Ngày phát hành</th>
-              <th>Hành động</th>
+              <th>{t("admin.albumManager.columns.cover")}</th>
+              <th>{t("admin.albumManager.columns.title")}</th>
+              <th>{t("admin.albumManager.columns.artists")}</th>
+              <th>{t("admin.albumManager.columns.releaseDate")}</th>
+              <th>{t("admin.albumManager.columns.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -306,13 +316,13 @@ function AlbumManager() {
                     className="admin-btn btn-edit"
                     onClick={() => openEdit(a)}
                   >
-                    Sửa
+                    {t("admin.common.actions.edit")}
                   </button>
                   <button
                     className="admin-btn btn-danger"
                     onClick={() => handleDelete(a.id)}
                   >
-                    Xóa
+                    {t("admin.common.actions.delete")}
                   </button>
                 </td>
               </tr>
@@ -320,7 +330,7 @@ function AlbumManager() {
             {albums.length === 0 && (
               <tr>
                 <td colSpan={6} style={{ padding: 16, color: "#666" }}>
-                  Chưa có album.
+                  {t("admin.albumManager.empty")}
                 </td>
               </tr>
             )}
@@ -332,7 +342,11 @@ function AlbumManager() {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>{isEditing ? "Cập Nhật Album" : "Thêm Album"}</h3>
+              <h3>
+                {isEditing
+                  ? t("admin.albumManager.modal.editTitle")
+                  : t("admin.albumManager.modal.createTitle")}
+              </h3>
               <button className="close-btn" type="button" onClick={closeModal}>
                 ×
               </button>
@@ -341,7 +355,8 @@ function AlbumManager() {
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>
-                  Tên album <span className="required">*</span>
+                  {t("admin.albumManager.form.titleLabel")}{" "}
+                  <span className="required">*</span>
                 </label>
                 <input
                   type="text"
@@ -349,13 +364,13 @@ function AlbumManager() {
                   onChange={(e) =>
                     setForm((p) => ({ ...p, title: e.target.value }))
                   }
-                  placeholder="Nhập tên album"
+                  placeholder={t("admin.albumManager.form.titlePlaceholder")}
                   required
                 />
               </div>
 
               <div className="form-group">
-                <label>Ngày phát hành</label>
+                <label>{t("admin.albumManager.form.releaseDateLabel")}</label>
                 <input
                   type="date"
                   value={form.releaseDate}
@@ -366,7 +381,7 @@ function AlbumManager() {
               </div>
 
               <div className="form-group">
-                <label>Ảnh bìa (upload từ máy)</label>
+                <label>{t("admin.albumManager.form.coverLabel")}</label>
                 <input type="file" accept="image/*" onChange={onCoverChange} />
                 {coverPreview && (
                   <div className="album-preview">
@@ -376,16 +391,18 @@ function AlbumManager() {
               </div>
 
               <div className="form-group">
-                <label>Nghệ sĩ</label>
+                <label>{t("admin.albumManager.form.artistsLabel")}</label>
                 {artists.length === 0 ? (
                   <div style={{ color: "#666" }}>
-                    Chưa có nghệ sĩ. Hãy thêm nghệ sĩ trước.
+                    {t("admin.albumManager.form.noArtistsHint")}
                   </div>
                 ) : (
                   <>
                     <div className="artist-selected-row">
                       {selectedArtists.length === 0 ? (
-                        <div style={{ color: "#666" }}>Chưa chọn nghệ sĩ.</div>
+                        <div style={{ color: "#666" }}>
+                          {t("admin.albumManager.form.noArtistsSelected")}
+                        </div>
                       ) : (
                         <div className="artist-selected-chips">
                           {selectedArtists.map((a) => (
@@ -416,7 +433,9 @@ function AlbumManager() {
                           // delay để click được item
                           setTimeout(() => setShowArtistDropdown(false), 150);
                         }}
-                        placeholder="Tìm nghệ sĩ theo tên..."
+                        placeholder={t(
+                          "admin.albumManager.form.searchArtistPlaceholder"
+                        )}
                       />
 
                       {showArtistDropdown && filteredArtists.length > 0 && (
@@ -448,10 +467,12 @@ function AlbumManager() {
                   className="admin-btn btn-secondary"
                   onClick={closeModal}
                 >
-                  Hủy
+                  {t("songDetailPage.actions.cancel")}
                 </button>
                 <button type="submit" className="admin-btn btn-primary">
-                  {isEditing ? "Cập Nhật" : "Thêm Mới"}
+                  {isEditing
+                    ? t("admin.common.actions.update")
+                    : t("admin.common.actions.create")}
                 </button>
               </div>
             </form>
