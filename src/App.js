@@ -27,6 +27,7 @@ import SongManager from "./components/Admin/SongManager/SongManager";
 import UserManager from "./components/Admin/UserManager/UserManager";
 import AlbumManager from "./components/Admin/AlbumManager/AlbumManager";
 import AlbumLibrary from "./components/AlbumLibrary/AlbumLibrary";
+import ChangePasswordModal from "./components/ChangePasswordModal/ChangePasswordModal";
 
 function App() {
   // --- TRẠNG THÁI (STATE) ---
@@ -41,6 +42,7 @@ function App() {
   // Trạng thái UI
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showPlaylistQueue, setShowPlaylistQueue] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
   // Trạng thái Đăng nhập
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -66,6 +68,9 @@ function App() {
   const [showSongActionModal, setShowSongActionModal] = useState(false);
   const [songForAction, setSongForAction] = useState(null);
 
+  useEffect(() => {
+    console.log("user data info:", user);
+  }, [user]);
   // --- EFFECTS ---
   // Kiểm tra đăng nhập khi load trang
   useEffect(() => {
@@ -86,6 +91,7 @@ function App() {
             localStorage.setItem("user", JSON.stringify(data));
             setIsLoggedIn(true);
             setUser(data);
+
             setShowAuthModal(false);
             if (data.role === "admin") setCurrentView("admin-dashboard");
           } else {
@@ -361,9 +367,22 @@ function App() {
   }, []);
   // Handler Đổi mật khẩu
   const handleChangePassword = useCallback(() => {
-    alert("Chức năng Đổi mật khẩu sẽ được cập nhật sau!");
-    // Hoặc set state để mở modal đổi mật khẩu
-  }, []);
+    const u = user || JSON.parse(localStorage.getItem("user") || "null");
+    const usernameLower = (u?.username || "").toLowerCase();
+    const isSocial =
+      usernameLower.includes("google") || usernameLower.includes("facebook");
+
+    if (!u || u.role !== "user") {
+      alert("Không có quyền");
+      return;
+    }
+    if (isSocial) {
+      alert("Tài khoản Google/Facebook không thể đổi mật khẩu tại đây");
+      return;
+    }
+
+    setShowChangePasswordModal(true);
+  }, [user]);
   // Hàm chuyển sang trang thông tin tài khoản
   const handleViewProfile = useCallback(() => {
     setCurrentView("profile");
@@ -534,6 +553,13 @@ function App() {
         <AuthModal
           onClose={handleCloseAuthModal}
           onLoginSuccess={handleLoginSuccess}
+        />
+      )}
+
+      {/* Modal Đổi mật khẩu */}
+      {showChangePasswordModal && (
+        <ChangePasswordModal
+          onClose={() => setShowChangePasswordModal(false)}
         />
       )}
 

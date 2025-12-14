@@ -48,6 +48,52 @@
     margin: 0 auto;
 }
 
+.vip-current-plan {
+    background: rgba(155, 77, 224, 0.12);
+    border: 1px solid rgba(155, 77, 224, 0.35);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin: -10px auto 22px;
+}
+
+.vip-current-plan-title {
+    font-size: 12px;
+    opacity: 0.85;
+    margin-bottom: 6px;
+}
+
+.vip-current-plan-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.vip-current-plan-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.vip-current-plan-meta {
+    font-size: 13px;
+    opacity: 0.9;
+    color: #d8d8d8;
+}
+
+.vip-current-plan-note {
+    margin-top: 10px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #d8d8d8;
+    opacity: 0.95;
+}
+
+.vip-current-plan-note b {
+    color: #fff;
+}
+
 .vip-packages-section h2,
 .vip-benefits-section h2 {
     text-align: center;
@@ -143,6 +189,13 @@
     margin: 0;
 }
 
+.package-description {
+  margin: 0 0 10px;
+  font-size: 13px;
+  opacity: 0.9;
+  line-height: 1.35;
+}
+
 .package-body li {
     display: flex;
     align-items: center;
@@ -205,12 +258,23 @@
     width: 250px;
 }
 
-.benefit-item img {
+.benefit-icon {
     width: 60px;
     height: 60px;
-    margin-bottom: 20px;
-    /* Filter để đổi màu icon sang trắng/tím nếu cần */
-    filter: drop-shadow(0 0 10px rgba(155, 77, 224, 0.5));
+    margin: 0 auto 20px;
+    display: grid;
+    place-items: center;
+    border-radius: 16px;
+    background: rgba(155, 77, 224, 0.12);
+    border: 1px solid rgba(155, 77, 224, 0.35);
+    box-shadow: 0 0 18px rgba(155, 77, 224, 0.2);
+}
+
+.benefit-icon svg {
+    width: 34px;
+    height: 34px;
+    color: #c38bff;
+    filter: drop-shadow(0 0 10px rgba(155, 77, 224, 0.35));
 }
 
 .benefit-item h4 {

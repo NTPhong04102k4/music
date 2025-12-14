@@ -302,9 +302,28 @@ router.get("/user/subscription", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
 
+    // Thêm flag cho FE: chỉ cho phép hạ gói trong 7 ngày đầu kể từ ngày user đăng ký
+    const [userRows] = await pool.execute(
+      "SELECT NgayThamGia FROM nguoidung WHERE NguoiDungID = ? LIMIT 1",
+      [userId]
+    );
+    const joinDate = userRows?.[0]?.NgayThamGia
+      ? new Date(userRows[0].NgayThamGia)
+      : null;
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const nowMs = Date.now();
+    const canDowngrade =
+      !joinDate || Number.isNaN(joinDate.getTime())
+        ? true
+        : nowMs - joinDate.getTime() <= SEVEN_DAYS_MS;
+    const joinDateISO =
+      joinDate && !Number.isNaN(joinDate.getTime())
+        ? joinDate.toISOString()
+        : null;
+
     const [rows] = await pool.execute(
       `
-      SELECT dk.DangKyID, dk.NgayHetHan, g.Ten as TenGoi, q.KhongQuangCao
+      SELECT dk.DangKyID, dk.NgayHetHan, g.GoiID, g.Ten as TenGoi, g.Gia, q.KhongQuangCao
       FROM dangkygoi dk
       JOIN goicuoc g ON dk.GoiID = g.GoiID
       JOIN quyentruycap q ON g.QuyenID = q.QuyenID
@@ -334,6 +353,10 @@ router.get("/user/subscription", authenticateToken, async (req, res) => {
         planName: displayName,
         expiryDate: sub.NgayHetHan,
         daysLeft: diffDays,
+        packageId: sub.GoiID,
+        packagePrice: Number(sub.Gia || 0),
+        canDowngrade,
+        joinDate: joinDateISO,
       });
     } else {
       res.json({
@@ -341,6 +364,10 @@ router.get("/user/subscription", authenticateToken, async (req, res) => {
         planName: "Miễn Phí",
         expiryDate: null,
         daysLeft: 0,
+        packageId: null,
+        packagePrice: 0,
+        canDowngrade,
+        joinDate: joinDateISO,
       });
     }
   } catch (error) {
