@@ -9,7 +9,7 @@ import {
   IoMicOutline, IoListOutline,
 } from 'react-icons/io5';
 
-function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPlaylistQueue, isFavorite, onToggleFavorite, onTimeUpdate,onOpenSongAction }) {
+function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPlaylistQueue, isFavorite, onToggleFavorite, onTimeUpdate, onOpenSongAction, onOpenSongDetail }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(80);
@@ -147,7 +147,11 @@ function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPla
   return (
     <div className="player-controls">
       <div className="player-left">
-        <div className="song-cover">
+        <div
+          className="song-cover"
+          onDoubleClick={() => currentSong && onOpenSongDetail && onOpenSongDetail(currentSong)}
+          title="Double click để xem chi tiết"
+        >
           <img
             src={currentSong ? (currentSong.cover || currentSong.imageUrl || 'https://placehold.co/60x60/a64883/fff?text=No+Image') : 'https://placehold.co/60x60/130c1c/fff?text=NCT'}
             alt="Song Cover"
@@ -159,7 +163,11 @@ function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPla
             <IoExpand />
           </div>
         </div>
-        <div className="song-info">
+        <div
+          className="song-info"
+          onDoubleClick={() => currentSong && onOpenSongDetail && onOpenSongDetail(currentSong)}
+          title="Double click để xem chi tiết"
+        >
           <div className="song-name">{currentSong ? currentSong.title : 'Chọn bài hát'}</div>
           <div className="artist-name">{currentSong ? currentSong.artists : 'Nghệ sĩ'}</div>
         </div>

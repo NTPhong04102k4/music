@@ -17,14 +17,15 @@ function SongActionModal({
   isFavorite,
   onToggleFavorite,
 }) {
-  if (!song) return null;
-  const [displayLikeCount, setDisplayLikeCount] = useState(song.likeCount);
+  const [displayLikeCount, setDisplayLikeCount] = useState(0);
 
   useEffect(() => {
+    if (!song) return;
     setDisplayLikeCount(song.likeCount);
   }, [song?.id, song?.likeCount]);
 
   useEffect(() => {
+    if (!song) return;
     const handler = (e) => {
       const detail = e?.detail || {};
       if (detail.songId === song.id && typeof detail.likeCount === "number") {
@@ -42,6 +43,8 @@ function SongActionModal({
     if (n >= 1000) return (n / 1000).toFixed(1) + "K";
     return n;
   };
+
+  if (!song) return null;
 
   return (
     <div className="song-action-overlay" onClick={onClose}>

@@ -1,0 +1,200 @@
+.song-detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.song-detail-modal {
+  width: min(980px, calc(100vw - 32px));
+  max-height: min(86vh, 820px);
+  background: #1a1025;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.song-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 16px 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.song-detail-basic {
+  display: flex;
+  gap: 14px;
+  min-width: 0;
+}
+
+.song-detail-cover {
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.song-detail-meta {
+  min-width: 0;
+}
+
+.song-detail-title {
+  font-size: 18px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.song-detail-artists {
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.75);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.song-detail-stats {
+  margin-top: 8px;
+  display: flex;
+  gap: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.song-detail-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.song-detail-close:hover {
+  border-color: rgba(155, 77, 224, 0.6);
+  color: #fff;
+}
+
+.song-detail-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tab-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.75);
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.tab-btn.active {
+  background: rgba(155, 77, 224, 0.22);
+  border-color: rgba(155, 77, 224, 0.55);
+  color: #fff;
+}
+
+.song-detail-body {
+  padding: 14px 16px 16px 16px;
+  overflow: auto;
+}
+
+.song-detail-subtle {
+  color: rgba(255, 255, 255, 0.7);
+  padding: 8px 0;
+}
+
+.song-detail-error {
+  margin-top: 8px;
+  color: #ffb4b4;
+  font-weight: 600;
+}
+
+.lyrics-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.pill {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.75);
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.pill.active {
+  background: rgba(155, 77, 224, 0.22);
+  border-color: rgba(155, 77, 224, 0.55);
+  color: #fff;
+}
+
+.lyrics-box {
+  white-space: pre-wrap;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+  line-height: 1.55;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.comment-node {
+  padding: 10px 10px;
+  border-left: 2px solid rgba(155, 77, 224, 0.35);
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+}
+
+.comment-meta {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.comment-user {
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.comment-time {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.comment-content {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: pre-wrap;
+}
+
+

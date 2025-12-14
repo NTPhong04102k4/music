@@ -30,6 +30,7 @@ import ArtistManager from "./components/Admin/ArtistManager/ArtistManager";
 import AlbumLibrary from "./components/AlbumLibrary/AlbumLibrary";
 import ChangePasswordModal from "./components/ChangePasswordModal/ChangePasswordModal";
 import ChartLibrary from "./components/ChartLibrary/ChartLibrary";
+import SongDetailPage from "./components/SongDetailPage/SongDetailPage";
 
 function App() {
   // --- TRẠNG THÁI (STATE) ---
@@ -70,6 +71,7 @@ function App() {
   // === MỚI: State cho Modal Tùy chọn bài hát ===
   const [showSongActionModal, setShowSongActionModal] = useState(false);
   const [songForAction, setSongForAction] = useState(null);
+  const [songForDetail, setSongForDetail] = useState(null);
 
   useEffect(() => {
     console.log("user data info:", user);
@@ -450,6 +452,13 @@ function App() {
     setShowSongActionModal(true);
   }, []);
 
+  const handleOpenSongDetail = useCallback((song) => {
+    if (!song) return;
+    setSongForDetail(song); // cache để hiển thị cover/title nhanh
+    setSelectedItemId(song.id);
+    setCurrentView("song-detail");
+  }, []);
+
   // 2. Hàm mở bảng Thêm vào Playlist (được gọi từ bảng Tùy chọn)
   const handleOpenAddToPlaylist = useCallback(
     (song) => {
@@ -556,6 +565,7 @@ function App() {
         }
         onTimeUpdate={handleTimeUpdate}
         onOpenSongAction={handleOpenSongAction}
+        onOpenSongDetail={handleOpenSongDetail}
       />
 
       {/* Modal Đăng nhập */}
@@ -594,6 +604,8 @@ function App() {
         />
       )}
 
+      {/* Đã chuyển sang màn SongDetailPage (không còn dùng modal) */}
+
       {/* === MỚI: Render Modal Thêm vào Playlist === */}
       {showAddToPlaylistModal && songToAddToPlaylist && (
         <AddToPlaylistModal
@@ -623,6 +635,13 @@ function App() {
             onBack={handleViewHome}
             onPlaySong={handlePlaySong}
             initialCategory={chartCategory}
+          />
+        )}
+        {currentView === "song-detail" && selectedItemId && (
+          <SongDetailPage
+            songId={selectedItemId}
+            currentSong={songForDetail || currentSong}
+            onBack={handleViewHome}
           />
         )}
         {currentView === "albums" && (

@@ -4,6 +4,214 @@ const { BASE_URL } = require("../config");
 
 const router = express.Router();
 
+// =======================================================
+// Helpers: lyrics fetch + translate
+// =======================================================
+async function fetchLyricsFromLyricsOvh({ artist, title }) {
+  if (!artist || !title) return null;
+  const url = `https://api.lyrics.ovh/v1/${encodeURIComponent(
+    artist
+  )}/${encodeURIComponent(title)}`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+  const data = await res.json().catch(() => null);
+  const lyrics = data?.lyrics ? String(data.lyrics) : null;
+  return lyrics && lyrics.trim() ? lyrics : null;
+}
+
+async function translateGoogleFree(text, targetLang) {
+  const input = String(text || "");
+  if (!input.trim()) return "";
+  // Google free translate endpoint (no key). May be rate-limited.
+  const q = input.length > 8000 ? input.slice(0, 8000) : input;
+  const url =
+    "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&dt=t&tl=" +
+    encodeURIComponent(targetLang) +
+    "&q=" +
+    encodeURIComponent(q);
+  const res = await fetch(url);
+  if (!res.ok) return "";
+  const data = await res.json().catch(() => null);
+  // data[0] is array of translated chunks: [[translated, original, ...], ...]
+  const parts = Array.isArray(data?.[0]) ? data[0] : [];
+  return parts.map((p) => (Array.isArray(p) ? p[0] : "")).join("");
+}
+
+function pickPrimaryArtist(artists) {
+  const s = String(artists || "").trim();
+  if (!s) return "";
+  // artists format: "a, b, c"
+  return s.split(",")[0].trim();
+}
+
+// =======================================================
+// Song detail (public)
+// GET /api/songs/:songId/detail
+// =======================================================
+router.get("/songs/:songId/detail", async (req, res) => {
+  try {
+    const songId = req.params.songId;
+    const [rows] = await pool.execute(
+      `
+      SELECT b.BaiHatID as id,
+             b.TieuDe as title,
+             b.AnhBiaBaiHat as imageUrl,
+             GROUP_CONCAT(DISTINCT n.TenNgheSi SEPARATOR ', ') as artists,
+             b.DuongDanAudio as audioUrl,
+             IFNULL(b.LuotPhat, 0) as listenCount,
+             IFNULL(b.LuotThich, 0) as likeCount,
+             b.NgayPhatHanh as releaseDate,
+             b.AlbumID as albumId
+      FROM baihat b
+      LEFT JOIN baihat_nghesi bn ON b.BaiHatID = bn.BaiHatID
+      LEFT JOIN nghesi n ON bn.NgheSiID = n.NgheSiID
+      WHERE b.BaiHatID = ?
+      GROUP BY b.BaiHatID
+      LIMIT 1
+    `,
+      [songId]
+    );
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ error: "Song not found" });
+    }
+
+    const s = rows[0];
+    res.json({
+      id: s.id,
+      title: s.title,
+      artists: s.artists || "Unknown Artist",
+      imageUrl: s.imageUrl ? `${BASE_URL}/api/image/song/${s.imageUrl}` : null,
+      audioUrl: s.audioUrl ? `${BASE_URL}/api/audio/${s.audioUrl}` : null,
+      listenCount: Number(s.listenCount || 0),
+      likeCount: Number(s.likeCount || 0),
+      releaseDate: s.releaseDate,
+      albumId: s.albumId,
+    });
+  } catch (error) {
+    console.error("Error song detail:", error);
+    res.status(500).json({ error: "Lỗi server" });
+  }
+});
+
+// =======================================================
+// Comments tree (public read)
+// GET /api/songs/:songId/comments
+// =======================================================
+router.get("/songs/:songId/comments", async (req, res) => {
+  try {
+    const songId = req.params.songId;
+    const [rows] = await pool.execute(
+      `
+      SELECT bl.BinhLuanID as id,
+             bl.BaiHatID as songId,
+             bl.NguoiDungID as userId,
+             COALESCE(ud.TenHienThi, ud.TenDangNhap, 'User') as userName,
+             bl.NoiDung as content,
+             bl.ThoiGian as createdAt,
+             bl.BinhLuanChaID as parentId
+      FROM binhluan bl
+      LEFT JOIN nguoidung ud ON bl.NguoiDungID = ud.NguoiDungID
+      WHERE bl.BaiHatID = ?
+      ORDER BY bl.ThoiGian ASC, bl.BinhLuanID ASC
+    `,
+      [songId]
+    );
+
+    const byId = new Map();
+    const roots = [];
+
+    for (const r of rows) {
+      byId.set(r.id, {
+        id: r.id,
+        songId: r.songId,
+        userId: r.userId,
+        userName: r.userName,
+        content: r.content,
+        createdAt: r.createdAt,
+        parentId: r.parentId,
+        children: [],
+      });
+    }
+
+    for (const r of rows) {
+      const node = byId.get(r.id);
+      const parentId = r.parentId;
+      if (parentId && byId.has(parentId)) {
+        byId.get(parentId).children.push(node);
+      } else {
+        roots.push(node);
+      }
+    }
+
+    res.json({ data: roots });
+  } catch (error) {
+    console.error("Error song comments:", error);
+    res.status(500).json({ error: "Lỗi server" });
+  }
+});
+
+// =======================================================
+// Lyrics + translations (public)
+// GET /api/songs/:songId/lyrics
+// Returns: { source, original, vi, en }
+// =======================================================
+router.get("/songs/:songId/lyrics", async (req, res) => {
+  try {
+    const songId = req.params.songId;
+    const [rows] = await pool.execute(
+      `
+      SELECT b.TieuDe as title,
+             GROUP_CONCAT(DISTINCT n.TenNgheSi SEPARATOR ', ') as artists
+      FROM baihat b
+      LEFT JOIN baihat_nghesi bn ON b.BaiHatID = bn.BaiHatID
+      LEFT JOIN nghesi n ON bn.NgheSiID = n.NgheSiID
+      WHERE b.BaiHatID = ?
+      GROUP BY b.BaiHatID
+      LIMIT 1
+    `,
+      [songId]
+    );
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ error: "Song not found" });
+    }
+
+    const title = String(rows[0].title || "");
+    const artists = String(rows[0].artists || "");
+    const primaryArtist = pickPrimaryArtist(artists);
+
+    const original = await fetchLyricsFromLyricsOvh({
+      artist: primaryArtist,
+      title,
+    });
+
+    if (!original) {
+      return res.json({
+        source: "lyrics.ovh",
+        original: null,
+        vi: null,
+        en: null,
+      });
+    }
+
+    // Translate to VI + EN
+    const [vi, en] = await Promise.all([
+      translateGoogleFree(original, "vi").catch(() => ""),
+      translateGoogleFree(original, "en").catch(() => ""),
+    ]);
+
+    res.json({
+      source: "lyrics.ovh + translate.googleapis.com",
+      original,
+      vi: vi || null,
+      en: en || null,
+    });
+  } catch (error) {
+    console.error("Error song lyrics:", error);
+    res.status(500).json({ error: "Lỗi server" });
+  }
+});
+
 // Gợi ý
 router.get("/suggestions", async (req, res) => {
   try {

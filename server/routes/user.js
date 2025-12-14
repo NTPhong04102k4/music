@@ -8,6 +8,97 @@ const { BASE_URL } = require("../config");
 const router = express.Router();
 
 // =======================================================
+// Comments (theo tài khoản) - bình luận / trả lời bình luận
+// Bảng: binhluan (BinhLuanChaID dùng cho cha/con)
+// =======================================================
+// POST /api/songs/:songId/comments  body: { content: string, parentId?: number }
+router.post("/songs/:songId/comments", authenticateToken, async (req, res) => {
+  const songId = req.params.songId;
+  const userId = req.user.userId;
+  const { content, parentId } = req.body || {};
+
+  const text = String(content || "").trim();
+  if (!text) return res.status(400).json({ error: "Nội dung bình luận trống" });
+  if (text.length > 2000)
+    return res
+      .status(400)
+      .json({ error: "Bình luận quá dài (tối đa 2000 ký tự)" });
+
+  let parent = null;
+  if (
+    parentId !== undefined &&
+    parentId !== null &&
+    String(parentId).trim() !== ""
+  ) {
+    const pid = parseInt(parentId, 10);
+    if (Number.isNaN(pid) || pid < 1) {
+      return res.status(400).json({ error: "parentId không hợp lệ" });
+    }
+    parent = pid;
+  }
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // validate song exists
+    const [songRows] = await conn.execute(
+      "SELECT BaiHatID FROM baihat WHERE BaiHatID = ? LIMIT 1",
+      [songId]
+    );
+    if (!songRows || songRows.length === 0) {
+      await conn.rollback();
+      return res.status(404).json({ error: "Bài hát không tồn tại" });
+    }
+
+    if (parent) {
+      const [parentRows] = await conn.execute(
+        "SELECT BinhLuanID, BaiHatID FROM binhluan WHERE BinhLuanID = ? LIMIT 1",
+        [parent]
+      );
+      if (!parentRows || parentRows.length === 0) {
+        await conn.rollback();
+        return res.status(404).json({ error: "Bình luận cha không tồn tại" });
+      }
+      if (Number(parentRows[0].BaiHatID) !== Number(songId)) {
+        await conn.rollback();
+        return res
+          .status(400)
+          .json({ error: "Bình luận cha không thuộc bài hát này" });
+      }
+    }
+
+    const [ins] = await conn.execute(
+      "INSERT INTO binhluan (NguoiDungID, BaiHatID, NoiDung, BinhLuanChaID, ThoiGian) VALUES (?, ?, ?, ?, NOW())",
+      [userId, songId, text, parent || null]
+    );
+    const newId = ins.insertId;
+
+    const [userRows] = await conn.execute(
+      "SELECT COALESCE(TenHienThi, TenDangNhap, 'User') as userName FROM nguoidung WHERE NguoiDungID = ? LIMIT 1",
+      [userId]
+    );
+
+    await conn.commit();
+    res.status(201).json({
+      id: newId,
+      songId: Number(songId),
+      userId: Number(userId),
+      userName: userRows?.[0]?.userName || "User",
+      content: text,
+      createdAt: new Date().toISOString(),
+      parentId: parent,
+    });
+  } catch (error) {
+    await conn.rollback().catch(() => {});
+    console.error("Error post comment:", error);
+    res.status(500).json({ error: "Lỗi server" });
+  } finally {
+    conn.release();
+  }
+});
+
+// =======================================================
 // Likes (theo tài khoản) - phục vụ icon Like (LuotThich)
 // Bảng: baihatyeuthich (NguoiDungID, BaiHatID, NgayThem)
 // Counter: baihat.LuotThich
