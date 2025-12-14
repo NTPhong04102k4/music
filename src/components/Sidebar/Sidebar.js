@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Sidebar.css';
+import { useTranslation } from "react-i18next";
 import {
   IoHeadsetOutline, 
   IoBarChartOutline,
@@ -26,6 +27,7 @@ const SidebarItem = ({ icon, text, to, isActive, onClick }) => {
 // Nhận thêm prop onViewAlbums
 const Sidebar = ({ onLoginClick, isLoggedIn, onViewFavorites, onViewHome, onViewHistory, onViewPlaylists, onViewAlbums }) => {
   const [activeItem, setActiveItem] = useState('kham-pha');
+  const { t } = useTranslation();
 
   const handleLibraryClick = (itemName) => {
     if (!isLoggedIn) {
@@ -64,21 +66,21 @@ const Sidebar = ({ onLoginClick, isLoggedIn, onViewFavorites, onViewHome, onView
             <IoHeadsetOutline />
             <span>NCT</span>
           </div>
-          <span className="sidebar-brand-nct-text">Mạng Xã Hội âm nhạc NCT</span>
+          <span className="sidebar-brand-nct-text">{t("sidebar.brandText")}</span>
         </div>
 
         <nav className="zm-navbar zm-navbar-main">
           <ul className="zm-navbar-menu">
             <SidebarItem
               icon={<IoBarChartOutline />}
-              text="Khám Phá"
+              text={t("sidebar.discover")}
               isActive={activeItem === 'kham-pha'}
               onClick={handleHomeClick}
             />
             {/* === SỬA: Đổi Thể Loại thành Album === */}
             <SidebarItem
               icon={<IoDiscOutline />}
-              text="Album"
+              text={t("sidebar.album")}
               isActive={activeItem === 'albums'}
               onClick={handleAlbumsClick} 
             />
@@ -86,24 +88,24 @@ const Sidebar = ({ onLoginClick, isLoggedIn, onViewFavorites, onViewHome, onView
         </nav>
 
         <div className="library-section">
-          <h3 className="library-title">THƯ VIỆN</h3>
+          <h3 className="library-title">{t("sidebar.libraryTitle")}</h3>
           <nav className="zm-navbar">
             <ul className="zm-navbar-menu">
               <SidebarItem
                 icon={<IoHeartOutline />}
-                text="Bài hát Yêu thích"
+                text={t("sidebar.favoritesSongs")}
                 isActive={activeItem === 'yeu-thich'}
                 onClick={() => handleLibraryClick('yeu-thich')}
               />
               <SidebarItem
                 icon={<IoListOutline />}
-                text="Danh sách phát"
+                text={t("sidebar.playlists")}
                 isActive={activeItem === 'danh-sach-phat'}
                 onClick={() => handleLibraryClick('danh-sach-phat')}
               />
                <SidebarItem
                 icon={<IoTimeOutline />}
-                text="Nghe gần đây"
+                text={t("sidebar.recentlyListened")}
                 isActive={activeItem === 'nghe-gan-day'}
                 onClick={() => handleLibraryClick('nghe-gan-day')}
               />
@@ -114,13 +116,13 @@ const Sidebar = ({ onLoginClick, isLoggedIn, onViewFavorites, onViewHome, onView
         {!isLoggedIn && (
           <div className="login-nav-container">
             <p className="login-nav-text">
-              Đăng nhập để khám phá nhạc hay
+              {t("sidebar.loginToDiscover")}
             </p>
             <button
               className="zm-btn login-nav-btn"
               onClick={onLoginClick} 
             >
-              Đăng nhập
+              {t("sidebar.login")}
             </button>
           </div>
         )}

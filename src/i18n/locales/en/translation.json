@@ -1,0 +1,29 @@
+{
+  "header": {
+    "searchPlaceholder": "Search songs, artists...",
+    "noResults": "No results found.",
+    "upgradeAccount": "Upgrade account"
+  },
+  "sidebar": {
+    "brandText": "NCT social music network",
+    "discover": "Discover",
+    "album": "Album",
+    "libraryTitle": "LIBRARY",
+    "favoritesSongs": "Favorite songs",
+    "playlists": "Playlists",
+    "recentlyListened": "Recently listened",
+    "loginToDiscover": "Log in to discover great music",
+    "login": "Log in"
+  },
+  "settings": {
+    "language": "Language",
+    "helpSupport": "Help & support",
+    "feedback": "Feedback"
+  },
+  "language": {
+    "english": "English",
+    "vietnamese": "Vietnamese"
+  }
+}
+
+

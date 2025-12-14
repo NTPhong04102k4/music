@@ -1,0 +1,29 @@
+{
+  "header": {
+    "searchPlaceholder": "Tìm kiếm bài hát, nghệ sĩ...",
+    "noResults": "Không tìm thấy kết quả.",
+    "upgradeAccount": "Nâng cấp tài khoản"
+  },
+  "sidebar": {
+    "brandText": "Mạng Xã Hội âm nhạc NCT",
+    "discover": "Khám Phá",
+    "album": "Album",
+    "libraryTitle": "THƯ VIỆN",
+    "favoritesSongs": "Bài hát Yêu thích",
+    "playlists": "Danh sách phát",
+    "recentlyListened": "Nghe gần đây",
+    "loginToDiscover": "Đăng nhập để khám phá nhạc hay",
+    "login": "Đăng nhập"
+  },
+  "settings": {
+    "language": "Ngôn ngữ",
+    "helpSupport": "Hướng dẫn và hỗ trợ",
+    "feedback": "Góp ý"
+  },
+  "language": {
+    "english": "English",
+    "vietnamese": "Tiếng Việt"
+  }
+}
+
+

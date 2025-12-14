@@ -2,13 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import "./Header.css";
 import UserMenu from "../UserMenu/UserMenu";
 import SettingsMenu from "../SettingsMenu/SettingsMenu";
+import { useTranslation } from "react-i18next";
 
-import {
-  IoArrowBack,
-  IoArrowForward,
-  IoSearch,
-  IoSettings,
-} from "react-icons/io5";
+import { IoSearch } from "react-icons/io5";
 
 function Header({
   onShowAuthModal,
@@ -25,6 +21,7 @@ function Header({
   const [searchResults, setSearchResults] = useState([]);
   const [isSearchActive, setIsSearchActive] = useState(false);
   const searchRef = useRef(null);
+  const { t } = useTranslation();
 
   // Search Effect
   useEffect(() => {
@@ -78,7 +75,7 @@ function Header({
                   <input
                     type="text"
                     className="form-control z-input-placeholder"
-                    placeholder="Tìm kiếm bài hát, nghệ sĩ..."
+                    placeholder={t("header.searchPlaceholder")}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onFocus={() => setIsSearchActive(true)}
@@ -109,7 +106,7 @@ function Header({
                   ))
                 ) : (
                   <div className="search-no-results">
-                    Không tìm thấy kết quả.
+                    {t("header.noResults")}
                   </div>
                 )}
               </div>
@@ -123,7 +120,7 @@ function Header({
             onClick={onUpgradeVip}
             style={{ border: "none", cursor: "pointer" }}
           >
-            Nâng cấp tài khoản
+            {t("header.upgradeAccount")}
           </button>
 
           <div className="setting-item">

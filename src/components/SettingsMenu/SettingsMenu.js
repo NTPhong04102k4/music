@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./SettingsMenu.css";
+import { useTranslation } from "react-i18next";
 import {
   IoSettingsOutline,
   IoEarthOutline,
@@ -13,6 +14,19 @@ function SettingsMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [showLangSub, setShowLangSub] = useState(false); // State cho menu con Ngôn ngữ
   const menuRef = useRef(null);
+  const { t, i18n } = useTranslation();
+
+  const currentLang = (i18n.resolvedLanguage || i18n.language || "vi")
+    .toLowerCase()
+    .split("-")[0];
+  const isEnglish = currentLang === "en";
+  const isVietnamese = currentLang === "vi";
+
+  const handleChangeLanguage = async (lng) => {
+    await i18n.changeLanguage(lng);
+    setShowLangSub(false);
+    setIsOpen(false);
+  };
 
   // Đóng menu khi click ra ngoài
   useEffect(() => {
@@ -44,24 +58,36 @@ function SettingsMenu() {
             {/* Mục Ngôn ngữ - Có Submenu */}
             <li
               className="settings-item"
-              onMouseEnter={() => setShowLangSub(true)}
-              onMouseLeave={() => setShowLangSub(false)}
+              onClick={() => setShowLangSub((v) => !v)}
             >
               <div className="item-content">
                 <IoEarthOutline className="item-icon" />
-                <span>Language</span>
+                <span>{t("settings.language")}</span>
                 <IoChevronForward className="arrow-icon" />
               </div>
 
               {/* Submenu Ngôn ngữ (Hiện ra bên trái) */}
               {showLangSub && (
                 <div className="submenu-dropdown">
-                  <div className="submenu-item">
-                    <span>English</span>
+                  <div
+                    className={`submenu-item ${isEnglish ? "active" : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleChangeLanguage("en");
+                    }}
+                  >
+                    <span>{t("language.english")}</span>
+                    {isEnglish && <IoCheckmark className="check-icon" />}
                   </div>
-                  <div className="submenu-item active">
-                    <span>Tiếng Việt</span>
-                    <IoCheckmark className="check-icon" />
+                  <div
+                    className={`submenu-item ${isVietnamese ? "active" : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleChangeLanguage("vi");
+                    }}
+                  >
+                    <span>{t("language.vietnamese")}</span>
+                    {isVietnamese && <IoCheckmark className="check-icon" />}
                   </div>
                 </div>
               )}
@@ -81,7 +107,7 @@ function SettingsMenu() {
             >
               <div className="item-content">
                 <IoInformationCircleOutline className="item-icon" />
-                <span>Hướng dẫn và hỗ trợ</span>
+                <span>{t("settings.helpSupport")}</span>
               </div>
             </li>
 
@@ -96,7 +122,7 @@ function SettingsMenu() {
             >
               <div className="item-content">
                 <IoChatboxEllipsesOutline className="item-icon" />
-                <span>Góp ý</span>
+                <span>{t("settings.feedback")}</span>
               </div>
             </li>
           </ul>
