@@ -1,7 +1,7 @@
 import React from 'react';
 import './SongActionModal.css';
 import { 
-    IoClose, IoAddCircleOutline, IoHeadset, IoHeartOutline, IoHeart, IoWarningOutline
+    IoClose, IoAddCircleOutline, IoHeadset, IoHeartOutline, IoHeart
 } from 'react-icons/io5';
 
 // Bỏ các props không dùng: isShuffled, onToggleShuffle, repeatMode...
@@ -53,43 +53,29 @@ function SongActionModal({
         <div className="action-divider"></div>
 
         <div className="action-list">
-             {/* Nút Yêu thích (Tùy chọn: giữ hoặc bỏ nếu muốn chỉ dùng ở PlayerControls) */}
+             {/* Menu: Thêm vào bài hát yêu thích */}
              <div 
                 className="action-item" 
                 onClick={() => {
                     onToggleFavorite(song.id);
-                    // onClose(); 
+                    onClose();
                 }}
             >
                 <span className="action-icon">
                     {isFavorite ? <IoHeart style={{color: '#9b4de0'}} /> : <IoHeartOutline />}
                 </span>
                 <span className="action-text">
-                    {isFavorite ? 'Xóa khỏi thư viện' : 'Thêm vào thư viện'}
+                    {isFavorite ? 'Xóa khỏi bài hát yêu thích' : 'Thêm vào bài hát yêu thích'}
                 </span>
             </div>
 
-            {/* Thêm vào Playlist */}
+            {/* Menu: Thêm vào danh sách phát */}
             <div 
                 className="action-item"
                 onClick={() => { onAddToPlaylist(song); onClose(); }}
             >
                 <span className="action-icon"><IoAddCircleOutline /></span>
                 <span className="action-text">Thêm vào danh sách phát</span>
-            </div>
-            
-            <div className="action-divider-small"></div>
-
-            {/* Báo cáo */}
-            <div 
-                className="action-item"
-                onClick={() => { 
-                    alert(`Đã gửi báo cáo cho bài hát: ${song.title}`); 
-                    onClose(); 
-                }}
-            >
-                <span className="action-icon"><IoWarningOutline /></span>
-                <span className="action-text">Báo cáo</span>
             </div>
         </div>
       </div>

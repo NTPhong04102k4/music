@@ -635,6 +635,7 @@ function App() {
             onBack={handleBackToMain}
             onPlaySong={handlePlaySong}
             onAddToPlaylist={handleOpenAddToPlaylist}
+            onOpenSongAction={handleOpenSongAction}
           />
         )}
 

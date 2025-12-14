@@ -288,7 +288,9 @@ router.get("/album/:id", async (req, res) => {
       `
             SELECT b.BaiHatID as id, b.TieuDe as title, b.AnhBiaBaiHat as imageUrl,
                    GROUP_CONCAT(n.TenNgheSi SEPARATOR ', ') as artists,
-                   b.DuongDanAudio as audioUrl
+                   b.DuongDanAudio as audioUrl,
+                   IFNULL(b.LuotPhat, 0) as listenCount,
+                   IFNULL(b.LuotThich, 0) as likeCount
             FROM baihat b
             JOIN baihat_nghesi bn ON b.BaiHatID = bn.BaiHatID
             JOIN nghesi n ON bn.NgheSiID = n.NgheSiID
@@ -315,6 +317,74 @@ router.get("/album/:id", async (req, res) => {
     res.json({ album: albumData, songs: songData });
   } catch (error) {
     console.error("Error album detail:", error);
+    res.status(500).json({ error: "Lỗi server" });
+  }
+});
+
+// Like song (tăng lượt thích)
+router.post("/songs/:songId/like", async (req, res) => {
+  try {
+    const { songId } = req.params;
+
+    if (!songId) {
+      return res.status(400).json({ error: "Thiếu songId" });
+    }
+
+    // Tăng LuotThich lên 1
+    const [result] = await pool.execute(
+      "UPDATE baihat SET LuotThich = IFNULL(LuotThich, 0) + 1 WHERE BaiHatID = ?",
+      [songId]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ error: "Bài hát không tồn tại" });
+    }
+
+    const [rows] = await pool.execute(
+      "SELECT IFNULL(LuotThich, 0) as likeCount FROM baihat WHERE BaiHatID = ? LIMIT 1",
+      [songId]
+    );
+
+    res.json({
+      message: "Đã tăng lượt thích",
+      likeCount: Number(rows?.[0]?.likeCount || 0),
+    });
+  } catch (error) {
+    console.error("Error like song:", error);
+    res.status(500).json({ error: "Lỗi server" });
+  }
+});
+
+// Unlike song (giảm lượt thích)
+router.post("/songs/:songId/unlike", async (req, res) => {
+  try {
+    const { songId } = req.params;
+
+    if (!songId) {
+      return res.status(400).json({ error: "Thiếu songId" });
+    }
+
+    // Giảm LuotThich xuống 1 nhưng không âm
+    const [result] = await pool.execute(
+      "UPDATE baihat SET LuotThich = GREATEST(IFNULL(LuotThich, 0) - 1, 0) WHERE BaiHatID = ?",
+      [songId]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ error: "Bài hát không tồn tại" });
+    }
+
+    const [rows] = await pool.execute(
+      "SELECT IFNULL(LuotThich, 0) as likeCount FROM baihat WHERE BaiHatID = ? LIMIT 1",
+      [songId]
+    );
+
+    res.json({
+      message: "Đã bỏ thích",
+      likeCount: Number(rows?.[0]?.likeCount || 0),
+    });
+  } catch (error) {
+    console.error("Error unlike song:", error);
     res.status(500).json({ error: "Lỗi server" });
   }
 });

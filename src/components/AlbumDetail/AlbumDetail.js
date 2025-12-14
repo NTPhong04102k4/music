@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { IoPlay, IoHeartOutline, IoEllipsisHorizontal, IoArrowBack } from 'react-icons/io5';
+import { IoPlay, IoThumbsUpOutline, IoThumbsUp, IoEllipsisHorizontal, IoArrowBack } from 'react-icons/io5';
 import './AlbumDetail.css';
 
-function AlbumDetail({ albumId, onBack, onPlaySong }) {
+function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
   const [albumData, setAlbumData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [likedSongIds, setLikedSongIds] = useState(() => new Set());
 
   useEffect(() => {
+    setLikedSongIds(new Set());
     fetchAlbumDetails();
   }, [albumId]);
 
@@ -35,6 +37,41 @@ function AlbumDetail({ albumId, onBack, onPlaySong }) {
 
   const handlePlaySong = (song) => {
     onPlaySong(song, albumData.songs);
+  };
+
+  const handleToggleLikeSong = async (songId) => {
+    try {
+      const isLiked = likedSongIds.has(songId);
+      const endpoint = isLiked ? 'unlike' : 'like';
+
+      const response = await fetch(
+        `http://localhost:5001/api/songs/${songId}/${endpoint}`,
+        { method: 'POST' }
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || 'Lỗi khi like bài hát');
+      }
+
+      // Update likeCount ngay trên UI
+      setAlbumData((prev) => {
+        if (!prev?.songs) return prev;
+        const nextSongs = prev.songs.map((s) =>
+          s.id === songId ? { ...s, likeCount: data.likeCount } : s
+        );
+        return { ...prev, songs: nextSongs };
+      });
+
+      setLikedSongIds((prev) => {
+        const next = new Set(prev);
+        if (isLiked) next.delete(songId);
+        else next.add(songId);
+        return next;
+      });
+    } catch (err) {
+      alert(err.message || 'Lỗi khi like bài hát');
+    }
   };
 
   if (loading) {
@@ -115,10 +152,23 @@ function AlbumDetail({ albumId, onBack, onPlaySong }) {
                 <p>{song.artists}</p>
               </div>
               <div className="song-actions">
-                <button className="action-btn">
-                  <IoHeartOutline />
+                {(() => {
+                  const isLiked = likedSongIds.has(song.id);
+                  return (
+                <button
+                  className={`action-btn ${isLiked ? 'liked' : ''}`}
+                  title="Like (tăng lượt thích)"
+                  onClick={() => handleToggleLikeSong(song.id)}
+                >
+                  {isLiked ? <IoThumbsUp style={{ color: '#fff' }} /> : <IoThumbsUpOutline />}
                 </button>
-                <button className="action-btn">
+                  );
+                })()}
+                <button
+                  className="action-btn"
+                  title="Tùy chọn"
+                  onClick={() => onOpenSongAction && onOpenSongAction(song)}
+                >
                   <IoEllipsisHorizontal />
                 </button>
                 <button
