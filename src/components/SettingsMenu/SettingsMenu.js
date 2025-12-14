@@ -70,35 +70,33 @@ function SettingsMenu() {
             <div className="settings-divider"></div>
 
             {/* Các mục khác */}
-            <li className="settings-item">
+            <li
+              className="settings-item"
+              onClick={() =>
+                window.open(
+                  "https://sites.google.com/view/privacy-policy-ntphong",
+                  "_blank"
+                )
+              }
+            >
               <div className="item-content">
                 <IoInformationCircleOutline className="item-icon" />
-                <span
-                  onClick={() =>
-                    window.open(
-                      "https://sites.google.com/view/privacy-policy-ntphong",
-                      "_blank"
-                    )
-                  }
-                >
-                  Hướng dẫn và hỗ trợ
-                </span>
+                <span>Hướng dẫn và hỗ trợ</span>
               </div>
             </li>
 
-            <li className="settings-item">
+            <li
+              className="settings-item"
+              onClick={() =>
+                window.open(
+                  "https://docs.google.com/forms/d/e/1FAIpQLSed0IpMD4ICoi0ygakPaOTBEz4A5-q1OecXqvPAfTO2-ncYuQ/viewform",
+                  "_blank"
+                )
+              }
+            >
               <div className="item-content">
                 <IoChatboxEllipsesOutline className="item-icon" />
-                <span
-                  onClick={() =>
-                    window.open(
-                      "https://docs.google.com/forms/d/e/1FAIpQLSed0IpMD4ICoi0ygakPaOTBEz4A5-q1OecXqvPAfTO2-ncYuQ/viewform",
-                      "_blank"
-                    )
-                  }
-                >
-                  Góp ý
-                </span>
+                <span>Góp ý</span>
               </div>
             </li>
           </ul>
