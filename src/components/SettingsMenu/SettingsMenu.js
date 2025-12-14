@@ -1,13 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
-import './SettingsMenu.css';
-import { 
-  IoSettingsOutline, 
-  IoEarthOutline, 
-  IoChevronForward, 
-  IoInformationCircleOutline, 
+import React, { useState, useRef, useEffect } from "react";
+import "./SettingsMenu.css";
+import {
+  IoSettingsOutline,
+  IoEarthOutline,
+  IoChevronForward,
+  IoInformationCircleOutline,
   IoChatboxEllipsesOutline,
-  IoCheckmark
-} from 'react-icons/io5';
+  IoCheckmark,
+} from "react-icons/io5";
 
 function SettingsMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,8 +28,10 @@ function SettingsMenu() {
   return (
     <div className="settings-menu-container" ref={menuRef}>
       {/* Nút Setting */}
-      <button 
-        className={`zm-btn zm-tooltip-btn is-hover-circle button ${isOpen ? 'active' : ''}`} 
+      <button
+        className={`zm-btn zm-tooltip-btn is-hover-circle button ${
+          isOpen ? "active" : ""
+        }`}
         onClick={() => setIsOpen(!isOpen)}
       >
         <IoSettingsOutline />
@@ -39,12 +41,11 @@ function SettingsMenu() {
       {isOpen && (
         <div className="settings-dropdown">
           <ul className="settings-list">
-            
             {/* Mục Ngôn ngữ - Có Submenu */}
-            <li 
-                className="settings-item"
-                onMouseEnter={() => setShowLangSub(true)}
-                onMouseLeave={() => setShowLangSub(false)}
+            <li
+              className="settings-item"
+              onMouseEnter={() => setShowLangSub(true)}
+              onMouseLeave={() => setShowLangSub(false)}
             >
               <div className="item-content">
                 <IoEarthOutline className="item-icon" />
@@ -72,14 +73,32 @@ function SettingsMenu() {
             <li className="settings-item">
               <div className="item-content">
                 <IoInformationCircleOutline className="item-icon" />
-                <span>Hướng dẫn và hỗ trợ</span>
+                <span
+                  onClick={() =>
+                    window.open(
+                      "https://sites.google.com/view/privacy-policy-ntphong",
+                      "_blank"
+                    )
+                  }
+                >
+                  Hướng dẫn và hỗ trợ
+                </span>
               </div>
             </li>
 
             <li className="settings-item">
               <div className="item-content">
                 <IoChatboxEllipsesOutline className="item-icon" />
-                <span>Góp ý</span>
+                <span
+                  onClick={() =>
+                    window.open(
+                      "https://docs.google.com/forms/d/e/1FAIpQLSed0IpMD4ICoi0ygakPaOTBEz4A5-q1OecXqvPAfTO2-ncYuQ/viewform",
+                      "_blank"
+                    )
+                  }
+                >
+                  Góp ý
+                </span>
               </div>
             </li>
           </ul>
