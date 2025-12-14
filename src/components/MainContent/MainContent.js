@@ -5,6 +5,7 @@ import {
   IoPlay,
   IoRefresh,
   IoEllipsisHorizontal,
+  IoAdd,
 } from "react-icons/io5"; // Thêm import icon
 import { SONG_STATS_CHANGED_EVENT } from "../../utils/songEvents";
 
@@ -13,6 +14,8 @@ function MainContent({
   onViewAlbum,
   onOpenSongAction,
   onViewCharts,
+  onViewArtists,
+  onViewArtist,
   isLoggedIn,
   favorites,
   onToggleFavorite,
@@ -20,6 +23,7 @@ function MainContent({
   const [suggestions, setSuggestions] = useState([]);
   const [chartData, setChartData] = useState([]);
   const [partners, setPartners] = useState([]);
+  const [artistsPreview, setArtistsPreview] = useState([]);
   const [chartCategory, setChartCategory] = useState("all"); // all | vn | foreign
 
   // --- FETCH DATA ---
@@ -44,10 +48,24 @@ function MainContent({
       .catch((error) => console.error("Error fetching partners:", error));
   };
 
+  const fetchArtistsPreview = () => {
+    fetch("http://localhost:5001/api/artists?page=1&limit=5")
+      .then((response) => response.json())
+      .then((data) => {
+        const list = Array.isArray(data?.data) ? data.data : [];
+        setArtistsPreview(list);
+      })
+      .catch((error) => {
+        console.error("Error fetching artists:", error);
+        setArtistsPreview([]);
+      });
+  };
+
   useEffect(() => {
     fetchSuggestions();
     fetchChartData();
     fetchPartners();
+    fetchArtistsPreview();
   }, []);
 
   // Global refresh: sau khi like/unlike ở bất kỳ đâu, gọi GET lại để đồng bộ UI toàn dự án
@@ -230,6 +248,52 @@ function MainContent({
               />
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* === NGHỆ SĨ === */}
+      <section className="content-section">
+        <div className="section-header">
+          <h2>Nghệ Sĩ</h2>
+        </div>
+
+        <div className="artist-preview-grid">
+          {artistsPreview.map((a) => (
+            <button
+              key={a.id}
+              type="button"
+              className="artist-preview-card"
+              onClick={() => onViewArtist && onViewArtist(a.id)}
+              title={a.name}
+            >
+              <div className="artist-preview-avatar">
+                <img
+                  src={
+                    a.avatarUrl ||
+                    "https://placehold.co/180x180/2f2739/ffffff?text=Artist"
+                  }
+                  alt={a.name}
+                  onError={(e) => {
+                    e.target.src =
+                      "https://placehold.co/180x180/2f2739/ffffff?text=Artist";
+                  }}
+                />
+              </div>
+              <div className="artist-preview-name">{a.name}</div>
+            </button>
+          ))}
+
+          <button
+            type="button"
+            className="artist-preview-card artist-preview-viewall"
+            onClick={() => onViewArtists && onViewArtists()}
+            title="View All"
+          >
+            <div className="artist-preview-plus">
+              <IoAdd />
+            </div>
+            <div className="artist-preview-viewall-text">View All</div>
+          </button>
         </div>
       </section>
     </div>

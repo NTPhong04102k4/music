@@ -9,7 +9,7 @@ import {
   IoMicOutline, IoListOutline,
 } from 'react-icons/io5';
 
-function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPlaylistQueue, isFavorite, onToggleFavorite, onTimeUpdate, onOpenSongAction, onOpenSongDetail }) {
+function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPlaylistQueue, isFavorite, onToggleFavorite, onTimeUpdate, onOpenSongAction, onOpenSongDetail, seekToSeconds, onSeekHandled }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(80);
@@ -98,6 +98,20 @@ function PlayerControls({ currentSong, onNext, onPrev, onTogglePlaylist, showPla
       audio.volume = volume / 100;
     }
   }, [volume, audio]);
+
+  // Seek from external (e.g., synced lyrics click)
+  useEffect(() => {
+    if (!audio) return;
+    if (typeof seekToSeconds !== "number" || !isFinite(seekToSeconds)) return;
+
+    try {
+      const target = Math.max(0, seekToSeconds);
+      audio.currentTime = target;
+      if (onSeekHandled) onSeekHandled();
+    } catch (e) {
+      console.error("Seek error:", e);
+    }
+  }, [seekToSeconds, audio, onSeekHandled]);
 
   const handlePlayPause = () => {
     if (audio) setIsPlaying(!isPlaying);

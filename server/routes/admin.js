@@ -3,9 +3,47 @@ const router = express.Router();
 const pool = require("../db"); // Import kết nối DB từ thư mục cha
 const BASE_URL = "http://localhost:5001";
 const { createPublicImageUpload } = require("../middleware/publicImageUpload");
+const multer = require("multer");
+const { fetchWrap } = require("../utils/fetchWrap");
+const { lrcToPlain } = require("../utils/lyricsSync");
 
 const albumCoverUpload = createPublicImageUpload("album");
 const artistAvatarUpload = createPublicImageUpload("artist");
+
+async function translateGoogleFree(text, targetLang) {
+  const input = String(text || "");
+  if (!input.trim()) return "";
+  const q = input.length > 8000 ? input.slice(0, 8000) : input;
+  const url =
+    "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&dt=t&tl=" +
+    encodeURIComponent(targetLang) +
+    "&q=" +
+    encodeURIComponent(q);
+  const res = await fetchWrap(url);
+  if (!res.ok) return "";
+  const data = await res.json().catch(() => null);
+  const parts = Array.isArray(data?.[0]) ? data[0] : [];
+  return parts.map((p) => (Array.isArray(p) ? p[0] : "")).join("");
+}
+
+async function ensureLyricsTable() {
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS loibaihat (
+      BaiHatID INT NOT NULL,
+      LrcText LONGTEXT NULL,
+      PlainText LONGTEXT NULL,
+      LyricsVI LONGTEXT NULL,
+      LyricsEN LONGTEXT NULL,
+      UpdatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (BaiHatID)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+}
+
+const lyricsUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+});
 // === MIDDLEWARE KIỂM TRA QUYỀN ADMIN ===
 const checkAdmin = (req, res, next) => {
   // req.user được tạo ra từ middleware authenticateToken (mount ở app.js)
@@ -358,6 +396,126 @@ router.delete("/songs/:id", async (req, res) => {
     res.status(500).json({ error: "Lỗi khi xóa bài hát" });
   }
 });
+
+// ==========================================
+// 2.x. API LỜI BÀI HÁT (LRC sync like YouTube)
+// ==========================================
+
+// GET /api/admin/songs/:id/lyrics
+router.get("/songs/:id/lyrics", async (req, res) => {
+  const songId = Number(req.params.id);
+  if (!songId) return res.status(400).json({ error: "songId không hợp lệ" });
+
+  try {
+    await ensureLyricsTable();
+    const [rows] = await pool.execute(
+      "SELECT BaiHatID, LrcText, PlainText, LyricsVI, LyricsEN, UpdatedAt FROM loibaihat WHERE BaiHatID = ?",
+      [songId]
+    );
+    if (!rows || rows.length === 0) {
+      return res.json({
+        songId,
+        lrc: null,
+        original: null,
+        vi: null,
+        en: null,
+        updatedAt: null,
+      });
+    }
+
+    const row = rows[0];
+    res.json({
+      songId,
+      lrc: row.LrcText ? String(row.LrcText) : null,
+      original: row.PlainText ? String(row.PlainText) : null,
+      vi: row.LyricsVI ? String(row.LyricsVI) : null,
+      en: row.LyricsEN ? String(row.LyricsEN) : null,
+      updatedAt: row.UpdatedAt || null,
+    });
+  } catch (error) {
+    console.error("Admin get lyrics error:", error);
+    res.status(500).json({ error: "Lỗi server khi lấy lời bài hát" });
+  }
+});
+
+// PUT /api/admin/songs/:id/lyrics (multipart: lrcFile)
+router.put(
+  "/songs/:id/lyrics",
+  lyricsUpload.single("lrcFile"),
+  async (req, res) => {
+    const songId = Number(req.params.id);
+    if (!songId) return res.status(400).json({ error: "songId không hợp lệ" });
+
+    try {
+      await ensureLyricsTable();
+
+      const lrcFromBody = req.body?.lrc ? String(req.body.lrc) : "";
+      const lrcFromFile = req.file?.buffer
+        ? req.file.buffer.toString("utf8")
+        : "";
+      const lrcText = (lrcFromFile || lrcFromBody || "").trim();
+
+      if (!lrcText) {
+        return res.status(400).json({ error: "Thiếu nội dung LRC" });
+      }
+
+      const plainText = lrcToPlain(lrcText);
+
+      const autoTranslate = String(req.body?.autoTranslate ?? "1") !== "0";
+      const viOverride = req.body?.lyricsVi ? String(req.body.lyricsVi) : "";
+      const enOverride = req.body?.lyricsEn ? String(req.body.lyricsEn) : "";
+
+      let lyricsVi = viOverride;
+      let lyricsEn = enOverride;
+
+      if (autoTranslate && plainText.trim()) {
+        const [vi, en] = await Promise.all([
+          lyricsVi
+            ? Promise.resolve(lyricsVi)
+            : translateGoogleFree(plainText, "vi"),
+          lyricsEn
+            ? Promise.resolve(lyricsEn)
+            : translateGoogleFree(plainText, "en"),
+        ]);
+        lyricsVi = vi || "";
+        lyricsEn = en || "";
+      }
+
+      await pool.execute(
+        `
+          INSERT INTO loibaihat (BaiHatID, LrcText, PlainText, LyricsVI, LyricsEN)
+          VALUES (?, ?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE
+            LrcText = VALUES(LrcText),
+            PlainText = VALUES(PlainText),
+            LyricsVI = VALUES(LyricsVI),
+            LyricsEN = VALUES(LyricsEN),
+            UpdatedAt = CURRENT_TIMESTAMP
+        `,
+        [songId, lrcText, plainText || null, lyricsVi || null, lyricsEn || null]
+      );
+
+      const [rows] = await pool.execute(
+        "SELECT BaiHatID, LrcText, PlainText, LyricsVI, LyricsEN, UpdatedAt FROM loibaihat WHERE BaiHatID = ?",
+        [songId]
+      );
+      const row = rows?.[0];
+
+      res.json({
+        message: "Đã cập nhật lyrics (LRC)",
+        songId,
+        lrc: row?.LrcText ? String(row.LrcText) : null,
+        original: row?.PlainText ? String(row.PlainText) : null,
+        vi: row?.LyricsVI ? String(row.LyricsVI) : null,
+        en: row?.LyricsEN ? String(row.LyricsEN) : null,
+        updatedAt: row?.UpdatedAt || null,
+      });
+    } catch (error) {
+      console.error("Admin update lyrics error:", error);
+      res.status(500).json({ error: "Lỗi server khi cập nhật lyrics" });
+    }
+  }
+);
 
 // ==========================================
 // 3. API QUẢN LÝ NGƯỜI DÙNG

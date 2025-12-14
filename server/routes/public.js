@@ -1,6 +1,8 @@
 const express = require("express");
 const pool = require("../db");
 const { BASE_URL } = require("../config");
+const { fetchWrap } = require("../utils/fetchWrap");
+const { lrcToPlain } = require("../utils/lyricsSync");
 
 const router = express.Router();
 
@@ -12,7 +14,7 @@ async function fetchLyricsFromLyricsOvh({ artist, title }) {
   const url = `https://api.lyrics.ovh/v1/${encodeURIComponent(
     artist
   )}/${encodeURIComponent(title)}`;
-  const res = await fetch(url);
+  const res = await fetchWrap(url);
   if (!res.ok) return null;
   const data = await res.json().catch(() => null);
   const lyrics = data?.lyrics ? String(data.lyrics) : null;
@@ -29,12 +31,26 @@ async function translateGoogleFree(text, targetLang) {
     encodeURIComponent(targetLang) +
     "&q=" +
     encodeURIComponent(q);
-  const res = await fetch(url);
+  const res = await fetchWrap(url);
   if (!res.ok) return "";
   const data = await res.json().catch(() => null);
   // data[0] is array of translated chunks: [[translated, original, ...], ...]
   const parts = Array.isArray(data?.[0]) ? data[0] : [];
   return parts.map((p) => (Array.isArray(p) ? p[0] : "")).join("");
+}
+
+async function ensureLyricsTable() {
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS loibaihat (
+      BaiHatID INT NOT NULL,
+      LrcText LONGTEXT NULL,
+      PlainText LONGTEXT NULL,
+      LyricsVI LONGTEXT NULL,
+      LyricsEN LONGTEXT NULL,
+      UpdatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (BaiHatID)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
 }
 
 function pickPrimaryArtist(artists) {
@@ -154,11 +170,40 @@ router.get("/songs/:songId/comments", async (req, res) => {
 // =======================================================
 // Lyrics + translations (public)
 // GET /api/songs/:songId/lyrics
-// Returns: { source, original, vi, en }
+// Returns: { source, songId, lrc, original, vi, en, updatedAt? }
 // =======================================================
 router.get("/songs/:songId/lyrics", async (req, res) => {
   try {
-    const songId = req.params.songId;
+    const songId = Number(req.params.songId);
+    if (!songId) return res.status(400).json({ error: "songId không hợp lệ" });
+
+    // 0) Prefer DB synced lyrics (LRC) if exists
+    await ensureLyricsTable();
+    const [dbRows] = await pool.execute(
+      "SELECT BaiHatID, LrcText, PlainText, LyricsVI, LyricsEN, UpdatedAt FROM loibaihat WHERE BaiHatID = ?",
+      [songId]
+    );
+    if (Array.isArray(dbRows) && dbRows.length) {
+      const row = dbRows[0];
+      const lrc = row.LrcText ? String(row.LrcText) : null;
+      const original =
+        row.PlainText && String(row.PlainText).trim()
+          ? String(row.PlainText)
+          : lrc
+          ? lrcToPlain(lrc)
+          : "";
+
+      return res.json({
+        source: "db",
+        songId,
+        lrc,
+        original: original || null,
+        vi: row.LyricsVI ? String(row.LyricsVI) : null,
+        en: row.LyricsEN ? String(row.LyricsEN) : null,
+        updatedAt: row.UpdatedAt || null,
+      });
+    }
+
     const [rows] = await pool.execute(
       `
       SELECT b.TieuDe as title,
@@ -188,6 +233,8 @@ router.get("/songs/:songId/lyrics", async (req, res) => {
     if (!original) {
       return res.json({
         source: "lyrics.ovh",
+        songId,
+        lrc: null,
         original: null,
         vi: null,
         en: null,
@@ -202,6 +249,8 @@ router.get("/songs/:songId/lyrics", async (req, res) => {
 
     res.json({
       source: "lyrics.ovh + translate.googleapis.com",
+      songId,
+      lrc: null,
       original,
       vi: vi || null,
       en: en || null,
@@ -468,6 +517,123 @@ router.get("/albums", async (req, res) => {
     res.json(data);
   } catch (error) {
     console.error("Error albums:", error);
+    res.status(500).json({ error: "Lỗi server" });
+  }
+});
+
+// =======================================================
+// Artists (public)
+// GET /api/artists?page=1&limit=20
+// =======================================================
+router.get("/artists", async (req, res) => {
+  try {
+    let page = parseInt(req.query.page, 10);
+    if (Number.isNaN(page) || page < 1) page = 1;
+    let limit = parseInt(req.query.limit, 10);
+    if (Number.isNaN(limit) || limit < 1) limit = 20;
+    if (limit > 100) limit = 100;
+    const offset = (page - 1) * limit;
+
+    const [rows] = await pool.execute(`
+      SELECT NgheSiID as id, TenNgheSi as name, TieuSu as bio, AnhDaiDien as avatarFile
+      FROM nghesi
+      ORDER BY NgheSiID DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `);
+
+    const [countRows] = await pool.execute("SELECT COUNT(*) as total FROM nghesi");
+    const total = Number(countRows?.[0]?.total || 0);
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    const data = rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      bio: r.bio || "",
+      avatarFile: r.avatarFile,
+      avatarUrl: r.avatarFile ? `${BASE_URL}/api/image/artist/${r.avatarFile}` : null,
+    }));
+
+    res.json({
+      data,
+      pagination: { page, limit, total, totalPages },
+    });
+  } catch (error) {
+    console.error("Error get artists:", error);
+    res.status(500).json({ error: "Lỗi server khi lấy danh sách nghệ sĩ" });
+  }
+});
+
+// =======================================================
+// Artist detail (public)
+// GET /api/artists/:id
+// Returns: { artist, songs }
+// =======================================================
+router.get("/artists/:id", async (req, res) => {
+  try {
+    const artistId = Number(req.params.id);
+    if (!artistId) return res.status(400).json({ error: "artistId không hợp lệ" });
+
+    const [artistRows] = await pool.execute(
+      `
+      SELECT NgheSiID as id, TenNgheSi as name, TieuSu as bio, AnhDaiDien as avatarFile
+      FROM nghesi
+      WHERE NgheSiID = ?
+      LIMIT 1
+    `,
+      [artistId]
+    );
+
+    if (!artistRows || artistRows.length === 0) {
+      return res.status(404).json({ error: "Artist not found" });
+    }
+
+    const artist = artistRows[0];
+
+    const [songRows] = await pool.execute(
+      `
+      SELECT b.BaiHatID as id,
+             b.TieuDe as title,
+             b.AnhBiaBaiHat as imageUrl,
+             GROUP_CONCAT(DISTINCT n.TenNgheSi SEPARATOR ', ') as artists,
+             b.DuongDanAudio as audioUrl,
+             IFNULL(b.LuotPhat, 0) as listenCount,
+             IFNULL(b.LuotThich, 0) as likeCount
+      FROM baihat b
+      JOIN baihat_nghesi bn_filter
+        ON b.BaiHatID = bn_filter.BaiHatID AND bn_filter.NgheSiID = ?
+      LEFT JOIN baihat_nghesi bn ON b.BaiHatID = bn.BaiHatID
+      LEFT JOIN nghesi n ON bn.NgheSiID = n.NgheSiID
+      GROUP BY b.BaiHatID
+      ORDER BY b.LuotPhat DESC, b.BaiHatID DESC
+    `,
+      [artistId]
+    );
+
+    const songs = songRows.map((s) => ({
+      ...s,
+      artists: s.artists || "Unknown Artist",
+      imageUrl: s.imageUrl
+        ? `${BASE_URL}/api/image/song/${s.imageUrl}`
+        : "https://placehold.co/60x60/7a3c9e/ffffff?text=No+Image",
+      audioUrl: s.audioUrl ? `${BASE_URL}/api/audio/${s.audioUrl}` : null,
+      listenCount: Number(s.listenCount || 0),
+      likeCount: Number(s.likeCount || 0),
+    }));
+
+    res.json({
+      artist: {
+        id: artist.id,
+        name: artist.name,
+        bio: artist.bio || "",
+        avatarFile: artist.avatarFile,
+        avatarUrl: artist.avatarFile
+          ? `${BASE_URL}/api/image/artist/${artist.avatarFile}`
+          : null,
+      },
+      songs,
+    });
+  } catch (error) {
+    console.error("Error artist detail:", error);
     res.status(500).json({ error: "Lỗi server" });
   }
 });

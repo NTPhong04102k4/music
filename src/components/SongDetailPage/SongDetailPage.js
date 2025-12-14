@@ -2,6 +2,40 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./SongDetailPage.css";
 import { IoChevronBack, IoSend } from "react-icons/io5";
 
+function parseLrc(lrcText) {
+  const input = String(lrcText || "");
+  const lines = input.split(/\r?\n/);
+  const out = [];
+  const timeTagRe = /\[(\d{1,2}):(\d{1,2}(?:\.\d{1,3})?)\]/g;
+
+  for (const rawLine of lines) {
+    if (!rawLine.trim()) continue;
+    let match;
+    const times = [];
+    while ((match = timeTagRe.exec(rawLine)) !== null) {
+      const mm = Number(match[1]);
+      const ss = Number(match[2]);
+      if (!Number.isFinite(mm) || !Number.isFinite(ss)) continue;
+      times.push(mm * 60 + ss);
+    }
+    const text = rawLine.replace(timeTagRe, "").trim();
+    if (!times.length) continue;
+    for (const t of times) out.push({ timeSec: t, text });
+  }
+
+  out.sort((a, b) => a.timeSec - b.timeSec);
+  // collapse consecutive duplicates (multi-tags)
+  const collapsed = [];
+  let lastText = null;
+  for (const l of out) {
+    if (!l.text) continue;
+    if (l.text === lastText) continue;
+    collapsed.push(l);
+    lastText = l.text;
+  }
+  return collapsed;
+}
+
 function buildTree(flat) {
   const byId = new Map();
   const roots = [];
@@ -42,11 +76,14 @@ function CommentItem({ node, onReply }) {
   );
 }
 
-function SongDetailPage({ songId, onBack, currentSong }) {
+function SongDetailPage({ songId, onBack, currentSong, playbackTime = 0, onSeek }) {
   const [detail, setDetail] = useState(null);
   const [tab, setTab] = useState("lyrics"); // lyrics | comments
-  const [lyrics, setLyrics] = useState({ original: null, vi: null, en: null });
+  const [lyrics, setLyrics] = useState({ lrc: null, original: null, vi: null, en: null });
   const [lyricsMode, setLyricsMode] = useState("original");
+  const [lrcLines, setLrcLines] = useState([]);
+  const [activeLineIdx, setActiveLineIdx] = useState(-1);
+  const lyricLineRefs = useRef([]);
 
   const [commentsTree, setCommentsTree] = useState([]);
   const [replyTo, setReplyTo] = useState(null); // {id, userName}
@@ -92,6 +129,7 @@ function SongDetailPage({ songId, onBack, currentSong }) {
     const d = await res.json();
     if (!res.ok) throw new Error(d?.error || `HTTP ${res.status}`);
     setLyrics({
+      lrc: d?.lrc || null,
       original: d?.original || null,
       vi: d?.vi || null,
       en: d?.en || null,
@@ -171,6 +209,48 @@ function SongDetailPage({ songId, onBack, currentSong }) {
         ? lyrics.en
         : lyrics.original;
 
+  const viLines = useMemo(() => {
+    return lyrics?.vi ? String(lyrics.vi).split(/\r?\n/) : [];
+  }, [lyrics?.vi]);
+  const enLines = useMemo(() => {
+    return lyrics?.en ? String(lyrics.en).split(/\r?\n/) : [];
+  }, [lyrics?.en]);
+
+  useEffect(() => {
+    const lines = lyrics?.lrc ? parseLrc(lyrics.lrc) : [];
+    setLrcLines(lines);
+    setActiveLineIdx(-1);
+    lyricLineRefs.current = [];
+  }, [lyrics?.lrc]);
+
+  useEffect(() => {
+    if (!lrcLines.length) return;
+    const t = Number(playbackTime);
+    if (!Number.isFinite(t)) return;
+
+    // binary search: last index with timeSec <= t
+    let lo = 0;
+    let hi = lrcLines.length - 1;
+    let ans = -1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (lrcLines[mid].timeSec <= t + 0.02) {
+        ans = mid;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+
+    if (ans !== activeLineIdx) {
+      setActiveLineIdx(ans);
+      const el = lyricLineRefs.current[ans];
+      if (el && typeof el.scrollIntoView === "function") {
+        el.scrollIntoView({ block: "center", behavior: "auto" });
+      }
+    }
+  }, [playbackTime, lrcLines, activeLineIdx]);
+
   if (isInitialLoading) return <div style={{ padding: 20 }}>Đang tải...</div>;
 
   return (
@@ -246,11 +326,45 @@ function SongDetailPage({ songId, onBack, currentSong }) {
                 >
                   EN
                 </button>
+                {lyrics?.lrc ? <span className="sdp-sync-badge">SYNC</span> : null}
               </div>
-              {!lyrics.original ? (
+              {!lyrics?.original && !lyrics?.lrc ? (
                 <div className="sdp-subtle">Không tìm thấy lời bài hát.</div>
               ) : (
-                <pre className="lyrics-box">{lyricsText || ""}</pre>
+                <>
+                  {lrcLines.length > 0 ? (
+                    <div className="sdp-lyrics-sync">
+                      {lrcLines.map((line, idx) => {
+                        const textForMode =
+                          lyricsMode === "vi"
+                            ? (viLines[idx] ?? line.text)
+                            : lyricsMode === "en"
+                              ? (enLines[idx] ?? line.text)
+                              : line.text;
+                        return (
+                          <div
+                            key={`${line.timeSec}-${idx}`}
+                            ref={(el) => {
+                              lyricLineRefs.current[idx] = el;
+                            }}
+                            className={`sdp-lyric-line ${idx === activeLineIdx ? "active" : ""}`}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => onSeek && onSeek(line.timeSec)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") onSeek && onSeek(line.timeSec);
+                            }}
+                            title="Click để tua"
+                          >
+                            {textForMode}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <pre className="lyrics-box">{lyricsText || ""}</pre>
+                  )}
+                </>
               )}
             </div>
           )}

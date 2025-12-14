@@ -140,6 +140,18 @@
   margin-bottom: 10px;
 }
 
+.sdp-sync-badge {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(155, 77, 224, 0.18);
+  border: 1px solid rgba(155, 77, 224, 0.35);
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .pill {
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -165,6 +177,38 @@
   padding: 12px;
   line-height: 1.55;
   font-size: 14px;
+}
+
+.sdp-lyrics-sync {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px;
+  line-height: 1.55;
+  font-size: 14px;
+  max-height: 420px;
+  overflow: auto;
+}
+
+.sdp-lyric-line {
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.86);
+  cursor: pointer;
+  user-select: none;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.sdp-lyric-line:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sdp-lyric-line.active {
+  background: rgba(155, 77, 224, 0.25);
+  border: 1px solid rgba(155, 77, 224, 0.35);
+  color: #fff;
+  font-weight: 900;
 }
 
 .sdp-composer {

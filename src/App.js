@@ -31,6 +31,8 @@ import AlbumLibrary from "./components/AlbumLibrary/AlbumLibrary";
 import ChangePasswordModal from "./components/ChangePasswordModal/ChangePasswordModal";
 import ChartLibrary from "./components/ChartLibrary/ChartLibrary";
 import SongDetailPage from "./components/SongDetailPage/SongDetailPage";
+import ArtistLibrary from "./components/ArtistLibrary/ArtistLibrary";
+import ArtistDetail from "./components/ArtistDetail/ArtistDetail";
 
 function App() {
   // --- TRẠNG THÁI (STATE) ---
@@ -72,6 +74,10 @@ function App() {
   const [showSongActionModal, setShowSongActionModal] = useState(false);
   const [songForAction, setSongForAction] = useState(null);
   const [songForDetail, setSongForDetail] = useState(null);
+
+  // Lyrics sync support (YouTube-like)
+  const [playbackTime, setPlaybackTime] = useState(0);
+  const [seekToSeconds, setSeekToSeconds] = useState(null);
 
   useEffect(() => {
     console.log("user data info:", user);
@@ -200,6 +206,7 @@ function App() {
   // Hàm được gọi mỗi giây từ PlayerControls
   const handleTimeUpdate = useCallback(
     (currentTime) => {
+      setPlaybackTime(currentTime);
       if (!currentSong) return;
 
       // Nếu đổi bài hát, reset bộ đếm
@@ -372,6 +379,16 @@ function App() {
     setChartCategory(category);
   }, []);
 
+  const handleViewArtists = useCallback(() => {
+    setCurrentView("artists");
+    setSelectedItemId(null);
+  }, []);
+
+  const handleViewArtistDetail = useCallback((artistId) => {
+    setSelectedItemId(artistId);
+    setCurrentView("artist-detail");
+  }, []);
+
   const handleBackToMain = useCallback(() => {
     setCurrentView("main");
     setSelectedItemId(null);
@@ -455,7 +472,8 @@ function App() {
   const handleOpenSongDetail = useCallback((song) => {
     if (!song) return;
     setSongForDetail(song); // cache để hiển thị cover/title nhanh
-    setSelectedItemId(song.id);
+    const id = song.id ?? song.songId ?? song.BaiHatID ?? null;
+    setSelectedItemId(id);
     setCurrentView("song-detail");
   }, []);
 
@@ -566,6 +584,8 @@ function App() {
         onTimeUpdate={handleTimeUpdate}
         onOpenSongAction={handleOpenSongAction}
         onOpenSongDetail={handleOpenSongDetail}
+        seekToSeconds={seekToSeconds}
+        onSeekHandled={() => setSeekToSeconds(null)}
       />
 
       {/* Modal Đăng nhập */}
@@ -622,6 +642,8 @@ function App() {
             onPlaySong={handlePlaySong}
             onViewAlbum={handleViewAlbum}
             onViewCharts={handleViewCharts}
+            onViewArtists={handleViewArtists}
+            onViewArtist={handleViewArtistDetail}
             isLoggedIn={isLoggedIn}
             favorites={favorites} // Truyền xuống nếu cần dùng để hiển thị trạng thái
             // onToggleFavorite đã chuyển xuống PlayerControls nên có thể không cần ở đây nữa
@@ -642,10 +664,27 @@ function App() {
             songId={selectedItemId}
             currentSong={songForDetail || currentSong}
             onBack={handleViewHome}
+            playbackTime={playbackTime}
+            onSeek={(seconds) => setSeekToSeconds(seconds)}
           />
         )}
         {currentView === "albums" && (
           <AlbumLibrary onViewAlbum={handleViewAlbum} />
+        )}
+
+        {currentView === "artists" && (
+          <ArtistLibrary
+            onBack={handleViewHome}
+            onViewArtist={handleViewArtistDetail}
+          />
+        )}
+
+        {currentView === "artist-detail" && selectedItemId && (
+          <ArtistDetail
+            artistId={selectedItemId}
+            onBack={handleViewArtists}
+            onPlaySong={handlePlaySong}
+          />
         )}
 
         {currentView === "album" && (
