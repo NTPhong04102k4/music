@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import "../MainContent/MainContent.css";
 import "./ChartLibrary.css";
 import { IoChevronBack, IoPlay } from "react-icons/io5";
+import { SONG_STATS_CHANGED_EVENT } from "../../utils/songEvents";
 
 function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
   const [songs, setSongs] = useState([]);
@@ -15,7 +16,10 @@ function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
   const limit = 20;
   const refreshTimerRef = useRef(null);
 
-  const fetchAllCharts = async (page = 1, opts = { showGlobalLoading: false }) => {
+  const fetchAllCharts = async (
+    page = 1,
+    opts = { showGlobalLoading: false }
+  ) => {
     if (opts?.showGlobalLoading) setIsInitialLoading(true);
     setError("");
     try {
@@ -66,7 +70,10 @@ function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
       const elapsed = Date.now() - startMs;
       const remain = Math.max(0, 200 - elapsed);
       if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-      refreshTimerRef.current = setTimeout(() => setIsRefreshing(false), remain);
+      refreshTimerRef.current = setTimeout(
+        () => setIsRefreshing(false),
+        remain
+      );
     }
   };
 
@@ -83,12 +90,22 @@ function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category]);
 
+  // Global refresh: sau khi like/unlike, gọi GET lại để đồng bộ
+  useEffect(() => {
+    const handler = () => {
+      refreshPage(currentPage);
+    };
+    window.addEventListener(SONG_STATS_CHANGED_EVENT, handler);
+    return () => window.removeEventListener(SONG_STATS_CHANGED_EVENT, handler);
+  }, [currentPage]);
+
   const handlePageChange = (newPage) => {
     if (newPage < 1 || newPage > totalPages) return;
     refreshPage(newPage);
   };
 
-  if (isInitialLoading) return <div style={{ padding: 20 }}>Đang tải bảng xếp hạng...</div>;
+  if (isInitialLoading)
+    return <div style={{ padding: 20 }}>Đang tải bảng xếp hạng...</div>;
 
   return (
     <div className="main-content chart-library">
@@ -137,34 +154,41 @@ function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
             onClick={() => refreshPage(currentPage)}
             disabled={isRefreshing}
           >
-            <span className={`reload-spinner ${isRefreshing ? "" : "hidden"}`} />
+            <span
+              className={`reload-spinner ${isRefreshing ? "" : "hidden"}`}
+            />
             LÀM MỚI
           </button>
         </div>
 
-        {error && (
-          <div className="chart-error">
-            {error}
-          </div>
-        )}
+        {error && <div className="chart-error">{error}</div>}
 
         <div className="chart-container">
           {songs.map((song) => (
             <div className="chart-item" key={song.id}>
               <div className="chart-item-left">
-                <span className={`chart-rank rank-${song.rank}`}>{song.rank}</span>
+                <span className={`chart-rank rank-${song.rank}`}>
+                  {song.rank}
+                </span>
                 <img
-                  src={song.cover || "https://placehold.co/60x60/a64883/fff?text=No+Image"}
+                  src={
+                    song.cover ||
+                    "https://placehold.co/60x60/a64883/fff?text=No+Image"
+                  }
                   alt={song.title}
                   className="chart-cover"
                   onError={(e) => {
-                    e.target.src = "https://placehold.co/60x60/a64883/fff?text=No+Image";
+                    e.target.src =
+                      "https://placehold.co/60x60/a64883/fff?text=No+Image";
                   }}
                   onClick={() => onPlaySong(song, songs)}
                   style={{ cursor: "pointer" }}
                 />
                 <div className="chart-song-info">
-                  <h4 className="song-title-clickable" onClick={() => onPlaySong(song, songs)}>
+                  <h4
+                    className="song-title-clickable"
+                    onClick={() => onPlaySong(song, songs)}
+                  >
                     {song.title}
                   </h4>
                   <p>{song.artists}</p>
@@ -181,7 +205,9 @@ function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
             </div>
           ))}
           {songs.length === 0 && !error && (
-            <div style={{ color: "var(--text-secondary)" }}>Chưa có dữ liệu.</div>
+            <div style={{ color: "var(--text-secondary)" }}>
+              Chưa có dữ liệu.
+            </div>
           )}
         </div>
 
@@ -212,5 +238,3 @@ function ChartLibrary({ onBack, onPlaySong, initialCategory = "all" }) {
 }
 
 export default ChartLibrary;
-
-

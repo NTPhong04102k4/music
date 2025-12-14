@@ -1,6 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { IoPlay, IoThumbsUpOutline, IoThumbsUp, IoEllipsisHorizontal, IoArrowBack } from 'react-icons/io5';
-import './AlbumDetail.css';
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  IoPlay,
+  IoThumbsUpOutline,
+  IoThumbsUp,
+  IoEllipsisHorizontal,
+  IoArrowBack,
+} from "react-icons/io5";
+import "./AlbumDetail.css";
+import { emitSongStatsChanged } from "../../utils/songEvents";
 
 function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
   const [albumData, setAlbumData] = useState(null);
@@ -8,26 +15,52 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
   const [error, setError] = useState(null);
   const [likedSongIds, setLikedSongIds] = useState(() => new Set());
 
+  const fetchAlbumDetails = useCallback(
+    async ({ silent = false } = {}) => {
+      try {
+        if (!silent) setLoading(true);
+        const response = await fetch(
+          `http://localhost:5001/api/album/${albumId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch album details");
+        }
+        const data = await response.json();
+        setAlbumData(data);
+
+        // Xác minh like theo tài khoản (nếu đã đăng nhập)
+        const token = localStorage.getItem("token");
+        if (token && Array.isArray(data?.songs) && data.songs.length > 0) {
+          const songIds = data.songs.map((s) => s.id);
+          const statusRes = await fetch(
+            "http://localhost:5001/api/songs/like-status",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ songIds }),
+            }
+          );
+          const statusData = await statusRes.json();
+          if (statusRes.ok && Array.isArray(statusData?.likedSongIds)) {
+            setLikedSongIds(new Set(statusData.likedSongIds));
+          }
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [albumId]
+  );
+
   useEffect(() => {
     setLikedSongIds(new Set());
     fetchAlbumDetails();
-  }, [albumId]);
-
-  const fetchAlbumDetails = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`http://localhost:5001/api/album/${albumId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch album details');
-      }
-      const data = await response.json();
-      setAlbumData(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [albumId, fetchAlbumDetails]);
 
   const handlePlayAlbum = () => {
     if (albumData && albumData.songs.length > 0) {
@@ -41,27 +74,28 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
 
   const handleToggleLikeSong = async (songId) => {
     try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Vui lòng đăng nhập để sử dụng tính năng Like");
+        return;
+      }
       const isLiked = likedSongIds.has(songId);
-      const endpoint = isLiked ? 'unlike' : 'like';
+      const endpoint = isLiked ? "unlike" : "like";
 
       const response = await fetch(
         `http://localhost:5001/api/songs/${songId}/${endpoint}`,
-        { method: 'POST' }
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data?.error || 'Lỗi khi like bài hát');
+        throw new Error(data?.error || "Lỗi khi like bài hát");
       }
-
-      // Update likeCount ngay trên UI
-      setAlbumData((prev) => {
-        if (!prev?.songs) return prev;
-        const nextSongs = prev.songs.map((s) =>
-          s.id === songId ? { ...s, likeCount: data.likeCount } : s
-        );
-        return { ...prev, songs: nextSongs };
-      });
 
       setLikedSongIds((prev) => {
         const next = new Set(prev);
@@ -69,8 +103,14 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
         else next.add(songId);
         return next;
       });
+
+      // Re-fetch để đảm bảo LuotThich đúng theo DB
+      await fetchAlbumDetails({ silent: true });
+
+      // Global notify để các màn khác gọi GET lại (đồng bộ toàn dự án)
+      emitSongStatsChanged({ songId, likeCount: data?.likeCount });
     } catch (err) {
-      alert(err.message || 'Lỗi khi like bài hát');
+      alert(err.message || "Lỗi khi like bài hát");
     }
   };
 
@@ -86,7 +126,9 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
     return (
       <div className="album-detail">
         <div className="error">Lỗi: {error}</div>
-        <button onClick={onBack} className="back-btn">Quay lại</button>
+        <button onClick={onBack} className="back-btn">
+          Quay lại
+        </button>
       </div>
     );
   }
@@ -95,7 +137,9 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
     return (
       <div className="album-detail">
         <div className="error">Không tìm thấy album</div>
-        <button onClick={onBack} className="back-btn">Quay lại</button>
+        <button onClick={onBack} className="back-btn">
+          Quay lại
+        </button>
       </div>
     );
   }
@@ -115,14 +159,18 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
             alt={album.title}
             className="album-cover"
             onError={(e) => {
-              e.target.src = 'https://placehold.co/300x300/4a90e2/ffffff?text=No+Image';
+              e.target.src =
+                "https://placehold.co/300x300/4a90e2/ffffff?text=No+Image";
             }}
           />
           <div className="album-details">
             <h1>{album.title}</h1>
             <p className="album-artists">{album.artists}</p>
             <p className="album-meta">
-              {songs.length} bài hát • {album.releaseDate ? new Date(album.releaseDate).getFullYear() : 'N/A'}
+              {songs.length} bài hát •{" "}
+              {album.releaseDate
+                ? new Date(album.releaseDate).getFullYear()
+                : "N/A"}
             </p>
             <button className="play-album-btn" onClick={handlePlayAlbum}>
               <IoPlay />
@@ -144,7 +192,8 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
                 alt={song.title}
                 className="song-cover"
                 onError={(e) => {
-                  e.target.src = 'https://placehold.co/60x60/7a3c9e/ffffff?text=No+Image';
+                  e.target.src =
+                    "https://placehold.co/60x60/7a3c9e/ffffff?text=No+Image";
                 }}
               />
               <div className="song-info">
@@ -155,13 +204,17 @@ function AlbumDetail({ albumId, onBack, onPlaySong, onOpenSongAction }) {
                 {(() => {
                   const isLiked = likedSongIds.has(song.id);
                   return (
-                <button
-                  className={`action-btn ${isLiked ? 'liked' : ''}`}
-                  title="Like (tăng lượt thích)"
-                  onClick={() => handleToggleLikeSong(song.id)}
-                >
-                  {isLiked ? <IoThumbsUp style={{ color: '#fff' }} /> : <IoThumbsUpOutline />}
-                </button>
+                    <button
+                      className={`action-btn ${isLiked ? "liked" : ""}`}
+                      title="Like (tăng lượt thích)"
+                      onClick={() => handleToggleLikeSong(song.id)}
+                    >
+                      {isLiked ? (
+                        <IoThumbsUp style={{ color: "#fff" }} />
+                      ) : (
+                        <IoThumbsUpOutline />
+                      )}
+                    </button>
                   );
                 })()}
                 <button

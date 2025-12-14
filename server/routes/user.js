@@ -7,6 +7,158 @@ const { BASE_URL } = require("../config");
 
 const router = express.Router();
 
+// =======================================================
+// Likes (theo tài khoản) - phục vụ icon Like (LuotThich)
+// Bảng: baihatyeuthich (NguoiDungID, BaiHatID, NgayThem)
+// Counter: baihat.LuotThich
+// =======================================================
+
+// Batch check like status
+// POST /api/songs/like-status  body: { songIds: number[] }
+router.post("/songs/like-status", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const songIds = Array.isArray(req.body?.songIds) ? req.body.songIds : [];
+
+    if (songIds.length === 0) {
+      return res.json({ likedSongIds: [] });
+    }
+    if (songIds.length > 200) {
+      return res.status(400).json({ error: "Quá nhiều songIds (tối đa 200)" });
+    }
+
+    const placeholders = songIds.map(() => "?").join(",");
+    const params = [userId, ...songIds];
+
+    const [rows] = await pool.execute(
+      `SELECT BaiHatID as songId
+       FROM baihatyeuthich
+       WHERE NguoiDungID = ?
+         AND BaiHatID IN (${placeholders})`,
+      params
+    );
+
+    res.json({ likedSongIds: rows.map((r) => Number(r.songId)) });
+  } catch (error) {
+    console.error("Error like-status:", error);
+    res.status(500).json({ error: "Lỗi server" });
+  }
+});
+
+// Like (idempotent): nếu đã like rồi thì không cộng thêm
+router.post("/songs/:songId/like", authenticateToken, async (req, res) => {
+  const songId = req.params.songId;
+  const userId = req.user.userId;
+  let conn;
+  try {
+    if (!songId) return res.status(400).json({ error: "Thiếu songId" });
+
+    conn = await pool.getConnection();
+    await conn.beginTransaction();
+
+    const [exists] = await conn.execute(
+      "SELECT 1 FROM baihatyeuthich WHERE NguoiDungID = ? AND BaiHatID = ? LIMIT 1",
+      [userId, songId]
+    );
+
+    if (exists.length === 0) {
+      await conn.execute(
+        "INSERT INTO baihatyeuthich (NguoiDungID, BaiHatID) VALUES (?, ?)",
+        [userId, songId]
+      );
+      await conn.execute(
+        "UPDATE baihat SET LuotThich = IFNULL(LuotThich, 0) + 1 WHERE BaiHatID = ?",
+        [songId]
+      );
+    }
+
+    const [rows] = await conn.execute(
+      "SELECT IFNULL(LuotThich, 0) as likeCount FROM baihat WHERE BaiHatID = ? LIMIT 1",
+      [songId]
+    );
+
+    await conn.commit();
+    res.json({
+      message: exists.length === 0 ? "Đã thích" : "Đã thích trước đó",
+      isLiked: true,
+      likeCount: Number(rows?.[0]?.likeCount || 0),
+    });
+  } catch (error) {
+    if (conn) await conn.rollback().catch(() => {});
+    // Duplicate key => đã like rồi (idempotent)
+    if (error?.code === "ER_DUP_ENTRY") {
+      try {
+        const [rows] = await pool.execute(
+          "SELECT IFNULL(LuotThich, 0) as likeCount FROM baihat WHERE BaiHatID = ? LIMIT 1",
+          [songId]
+        );
+        return res.json({
+          message: "Đã thích trước đó",
+          isLiked: true,
+          likeCount: Number(rows?.[0]?.likeCount || 0),
+        });
+      } catch (_) {
+        return res.json({
+          message: "Đã thích trước đó",
+          isLiked: true,
+          likeCount: null,
+        });
+      }
+    }
+    console.error("Error like song:", error);
+    res.status(500).json({ error: "Lỗi server" });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// Unlike (idempotent): nếu chưa like thì không trừ
+router.post("/songs/:songId/unlike", authenticateToken, async (req, res) => {
+  const songId = req.params.songId;
+  const userId = req.user.userId;
+  let conn;
+  try {
+    if (!songId) return res.status(400).json({ error: "Thiếu songId" });
+
+    conn = await pool.getConnection();
+    await conn.beginTransaction();
+
+    const [exists] = await conn.execute(
+      "SELECT 1 FROM baihatyeuthich WHERE NguoiDungID = ? AND BaiHatID = ? LIMIT 1",
+      [userId, songId]
+    );
+
+    if (exists.length > 0) {
+      await conn.execute(
+        "DELETE FROM baihatyeuthich WHERE NguoiDungID = ? AND BaiHatID = ?",
+        [userId, songId]
+      );
+      await conn.execute(
+        "UPDATE baihat SET LuotThich = GREATEST(IFNULL(LuotThich, 0) - 1, 0) WHERE BaiHatID = ?",
+        [songId]
+      );
+    }
+
+    const [rows] = await conn.execute(
+      "SELECT IFNULL(LuotThich, 0) as likeCount FROM baihat WHERE BaiHatID = ? LIMIT 1",
+      [songId]
+    );
+
+    await conn.commit();
+    res.json({
+      message: exists.length > 0 ? "Đã bỏ thích" : "Chưa thích trước đó",
+      isLiked: false,
+      likeCount: Number(rows?.[0]?.likeCount || 0),
+    });
+  } catch (error) {
+    if (conn) await conn.rollback().catch(() => {});
+    console.error("Error unlike song:", error);
+    res.status(500).json({ error: "Lỗi server" });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
 // Favorites
 router.get("/favorites", authenticateToken, async (req, res) => {
   try {
@@ -46,30 +198,63 @@ router.get("/favorites", authenticateToken, async (req, res) => {
 });
 
 router.post("/favorites/:songId", authenticateToken, async (req, res) => {
+  const conn = await pool.getConnection();
   try {
     const userId = req.user.userId;
     const songId = req.params.songId;
-    const [exists] = await pool.execute(
-      "SELECT * FROM baihatyeuthich WHERE NguoiDungID = ? AND BaiHatID = ?",
+
+    await conn.beginTransaction();
+
+    const [exists] = await conn.execute(
+      "SELECT 1 FROM baihatyeuthich WHERE NguoiDungID = ? AND BaiHatID = ? LIMIT 1",
       [userId, songId]
     );
 
     if (exists.length > 0) {
-      await pool.execute(
+      await conn.execute(
         "DELETE FROM baihatyeuthich WHERE NguoiDungID = ? AND BaiHatID = ?",
         [userId, songId]
       );
-      res.json({ message: "Đã xóa", isLiked: false });
-    } else {
-      await pool.execute(
-        "INSERT INTO baihatyeuthich (NguoiDungID, BaiHatID) VALUES (?, ?)",
-        [userId, songId]
+      await conn.execute(
+        "UPDATE baihat SET LuotThich = GREATEST(IFNULL(LuotThich, 0) - 1, 0) WHERE BaiHatID = ?",
+        [songId]
       );
-      res.json({ message: "Đã thêm", isLiked: true });
+      const [rows] = await conn.execute(
+        "SELECT IFNULL(LuotThich, 0) as likeCount FROM baihat WHERE BaiHatID = ? LIMIT 1",
+        [songId]
+      );
+      await conn.commit();
+      return res.json({
+        message: "Đã bỏ thích",
+        isLiked: false,
+        likeCount: Number(rows?.[0]?.likeCount || 0),
+      });
     }
+
+    await conn.execute(
+      "INSERT INTO baihatyeuthich (NguoiDungID, BaiHatID) VALUES (?, ?)",
+      [userId, songId]
+    );
+    await conn.execute(
+      "UPDATE baihat SET LuotThich = IFNULL(LuotThich, 0) + 1 WHERE BaiHatID = ?",
+      [songId]
+    );
+    const [rows] = await conn.execute(
+      "SELECT IFNULL(LuotThich, 0) as likeCount FROM baihat WHERE BaiHatID = ? LIMIT 1",
+      [songId]
+    );
+    await conn.commit();
+    return res.json({
+      message: "Đã thích",
+      isLiked: true,
+      likeCount: Number(rows?.[0]?.likeCount || 0),
+    });
   } catch (error) {
+    await conn.rollback().catch(() => {});
     console.error("Error toggle favorite:", error);
     res.status(500).json({ error: "Lỗi server" });
+  } finally {
+    conn.release();
   }
 });
 

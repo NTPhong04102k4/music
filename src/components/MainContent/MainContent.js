@@ -1,33 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import './MainContent.css'; 
-import { IoChevronForward, IoPlay, IoRefresh, IoEllipsisHorizontal } from 'react-icons/io5'; // Thêm import icon
+import React, { useState, useEffect } from "react";
+import "./MainContent.css";
+import {
+  IoChevronForward,
+  IoPlay,
+  IoRefresh,
+  IoEllipsisHorizontal,
+} from "react-icons/io5"; // Thêm import icon
+import { SONG_STATS_CHANGED_EVENT } from "../../utils/songEvents";
 
-function MainContent({ onPlaySong, onViewAlbum, onOpenSongAction, onViewCharts, isLoggedIn, favorites, onToggleFavorite }) {
+function MainContent({
+  onPlaySong,
+  onViewAlbum,
+  onOpenSongAction,
+  onViewCharts,
+  isLoggedIn,
+  favorites,
+  onToggleFavorite,
+}) {
   const [suggestions, setSuggestions] = useState([]);
   const [chartData, setChartData] = useState([]);
   const [partners, setPartners] = useState([]);
-  const [chartCategory, setChartCategory] = useState('all'); // all | vn | foreign
+  const [chartCategory, setChartCategory] = useState("all"); // all | vn | foreign
 
   // --- FETCH DATA ---
   const fetchSuggestions = () => {
-    fetch('http://localhost:5001/api/suggestions') 
-      .then(response => response.json())
-      .then(data => setSuggestions(data))
-      .catch(error => console.error('Error fetching suggestions:', error));
+    fetch("http://localhost:5001/api/suggestions")
+      .then((response) => response.json())
+      .then((data) => setSuggestions(data))
+      .catch((error) => console.error("Error fetching suggestions:", error));
   };
 
   const fetchChartData = () => {
     fetch(`http://localhost:5001/api/charts?category=${chartCategory}`)
-      .then(response => response.json())
-      .then(data => setChartData(data))
-      .catch(error => console.error('Error fetching charts:', error));
+      .then((response) => response.json())
+      .then((data) => setChartData(data))
+      .catch((error) => console.error("Error fetching charts:", error));
   };
 
   const fetchPartners = () => {
-     fetch('http://localhost:5001/api/partners')
-      .then(response => response.json())
-      .then(data => setPartners(data))
-      .catch(error => console.error('Error fetching partners:', error));
+    fetch("http://localhost:5001/api/partners")
+      .then((response) => response.json())
+      .then((data) => setPartners(data))
+      .catch((error) => console.error("Error fetching partners:", error));
   };
 
   useEffect(() => {
@@ -35,6 +49,17 @@ function MainContent({ onPlaySong, onViewAlbum, onOpenSongAction, onViewCharts, 
     fetchChartData();
     fetchPartners();
   }, []);
+
+  // Global refresh: sau khi like/unlike ở bất kỳ đâu, gọi GET lại để đồng bộ UI toàn dự án
+  useEffect(() => {
+    const handler = () => {
+      fetchSuggestions();
+      fetchChartData();
+    };
+    window.addEventListener(SONG_STATS_CHANGED_EVENT, handler);
+    return () => window.removeEventListener(SONG_STATS_CHANGED_EVENT, handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chartCategory]);
 
   useEffect(() => {
     fetchChartData();
@@ -52,7 +77,7 @@ function MainContent({ onPlaySong, onViewAlbum, onOpenSongAction, onViewCharts, 
             LÀM MỚI
           </button>
         </div>
-        
+
         <div className="song-list-grid three-columns">
           {suggestions.map((item) => (
             <div
@@ -61,41 +86,44 @@ function MainContent({ onPlaySong, onViewAlbum, onOpenSongAction, onViewCharts, 
               // Click vào cả khối cũng phát nhạc (UX tốt hơn) - nhưng phải cẩn thận với click vào nút action
               // Tốt nhất là bỏ click tổng, chỉ click vào ảnh/tên để tránh xung đột với nút action
               // Hoặc giữ lại và dùng e.stopPropagation() ở nút action (đã làm bên dưới)
-               onClick={() => onPlaySong(item, suggestions)}
+              onClick={() => onPlaySong(item, suggestions)}
             >
               <div className="song-item-left">
-                <img 
-                    src={item.imageUrl || 'https://placehold.co/60x60/7a3c9e/ffffff?text=Err'} 
-                    alt={item.title} 
-                    className="song-item-cover" 
-                    onError={(e) => { e.target.src = 'https://placehold.co/60x60/7a3c9e/ffffff?text=Err'; }}
+                <img
+                  src={
+                    item.imageUrl ||
+                    "https://placehold.co/60x60/7a3c9e/ffffff?text=Err"
+                  }
+                  alt={item.title}
+                  className="song-item-cover"
+                  onError={(e) => {
+                    e.target.src =
+                      "https://placehold.co/60x60/7a3c9e/ffffff?text=Err";
+                  }}
                 />
                 <div className="song-item-play-icon">
                   <IoPlay />
                 </div>
               </div>
-              
+
               <div className="song-item-info">
-                 <h4 className="song-title-clickable">
-                    {item.title}
-                 </h4>
-                 <p>{item.artists}</p>
+                <h4 className="song-title-clickable">{item.title}</h4>
+                <p>{item.artists}</p>
               </div>
 
               {/* === SỬA: Thêm khu vực Action (Yêu thích & Tùy chọn) === */}
               <div className="song-item-actions">
-                <button 
-                    className="action-btn"
-                    onClick={(e) => {
-                        e.stopPropagation(); // Ngăn phát nhạc khi bấm nút này
-                        if (onOpenSongAction) onOpenSongAction(item);
-                    }}
-                    title="Khác"
+                <button
+                  className="action-btn"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Ngăn phát nhạc khi bấm nút này
+                    if (onOpenSongAction) onOpenSongAction(item);
+                  }}
+                  title="Khác"
                 >
-                    <IoEllipsisHorizontal />
+                  <IoEllipsisHorizontal />
                 </button>
               </div>
-
             </div>
           ))}
         </div>
@@ -109,22 +137,24 @@ function MainContent({ onPlaySong, onViewAlbum, onOpenSongAction, onViewCharts, 
           <div className="chart-tabs">
             <button
               type="button"
-              className={`chart-tab ${chartCategory === 'all' ? 'active' : ''}`}
-              onClick={() => setChartCategory('all')}
+              className={`chart-tab ${chartCategory === "all" ? "active" : ""}`}
+              onClick={() => setChartCategory("all")}
             >
               TẤT CẢ
             </button>
             <button
               type="button"
-              className={`chart-tab ${chartCategory === 'vn' ? 'active' : ''}`}
-              onClick={() => setChartCategory('vn')}
+              className={`chart-tab ${chartCategory === "vn" ? "active" : ""}`}
+              onClick={() => setChartCategory("vn")}
             >
               NHẠC VIỆT
             </button>
             <button
               type="button"
-              className={`chart-tab ${chartCategory === 'foreign' ? 'active' : ''}`}
-              onClick={() => setChartCategory('foreign')}
+              className={`chart-tab ${
+                chartCategory === "foreign" ? "active" : ""
+              }`}
+              onClick={() => setChartCategory("foreign")}
             >
               NHẠC NGOẠI
             </button>
@@ -138,48 +168,65 @@ function MainContent({ onPlaySong, onViewAlbum, onOpenSongAction, onViewCharts, 
           </button>
         </div>
         <div className="chart-container">
-          {Array.isArray(chartData) && chartData.map((song, index) => (
-            <div className="chart-item" key={song.id}>
-              <div className="chart-item-left">
-                <span className={`chart-rank rank-${song.rank || (index + 1)}`}>{song.rank || (index + 1)}</span>
-                <img
-                  src={song.cover || 'https://placehold.co/60x60/a64883/fff?text=No+Image'}
-                  alt={song.title}
-                  className="chart-cover"
-                  onError={(e) => { e.target.src = 'https://placehold.co/60x60/a64883/fff?text=No+Image'; }}
-                  onClick={() => onPlaySong(song, chartData)}
-                  style={{ cursor: 'pointer' }}
-                />
-                <div className="chart-song-info">
-                  <h4 
-                    className="song-title-clickable"
+          {Array.isArray(chartData) &&
+            chartData.map((song, index) => (
+              <div className="chart-item" key={song.id}>
+                <div className="chart-item-left">
+                  <span className={`chart-rank rank-${song.rank || index + 1}`}>
+                    {song.rank || index + 1}
+                  </span>
+                  <img
+                    src={
+                      song.cover ||
+                      "https://placehold.co/60x60/a64883/fff?text=No+Image"
+                    }
+                    alt={song.title}
+                    className="chart-cover"
+                    onError={(e) => {
+                      e.target.src =
+                        "https://placehold.co/60x60/a64883/fff?text=No+Image";
+                    }}
+                    onClick={() => onPlaySong(song, chartData)}
+                    style={{ cursor: "pointer" }}
+                  />
+                  <div className="chart-song-info">
+                    <h4
+                      className="song-title-clickable"
+                      onClick={() => onPlaySong(song, chartData)}
+                    >
+                      {song.title}
+                    </h4>
+                    <p>{song.artists}</p>
+                  </div>
+                </div>
+                <div className="chart-item-right">
+                  <button
+                    className="player-btn icon-btn play-pause-btn chart-play-btn"
                     onClick={() => onPlaySong(song, chartData)}
                   >
-                    {song.title}
-                  </h4>
-                  <p>{song.artists}</p>
+                    <IoPlay />
+                  </button>
                 </div>
               </div>
-              <div className="chart-item-right">
-                <button className="player-btn icon-btn play-pause-btn chart-play-btn" onClick={() => onPlaySong(song, chartData)}>
-                  <IoPlay />
-                </button>
-              </div>
-            </div>
-          ))}
+            ))}
         </div>
       </section>
-    
+
       {/* === ĐỐI TÁC === */}
       <section className="content-section partners-section">
-        <div className="section-header"><h2>Đối Tác Âm Nhạc</h2></div>
+        <div className="section-header">
+          <h2>Đối Tác Âm Nhạc</h2>
+        </div>
         <div className="carousel-grid five-columns">
           {partners.map((partner) => (
             <div className="partner-logo" key={partner.id}>
               <img
                 src={partner.logoUrl}
                 alt={partner.name}
-                onError={(e) => { e.target.src = 'https://placehold.co/150x80/2f2739/a0a0a0?text=Logo'; }}
+                onError={(e) => {
+                  e.target.src =
+                    "https://placehold.co/150x80/2f2739/a0a0a0?text=Logo";
+                }}
               />
             </div>
           ))}

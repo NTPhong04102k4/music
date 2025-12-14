@@ -184,6 +184,34 @@ INSERT INTO `baihatyeuthich` VALUES (1,1,'2025-11-19 12:43:06'),(1,2,'2025-11-19
 UNLOCK TABLES;
 
 --
+-- Table structure for table `baihatluotthich`
+-- (Like theo tài khoản - dùng cho LuotThich / icon Like)
+--
+
+DROP TABLE IF EXISTS `baihatluotthich`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `baihatluotthich` (
+  `NguoiDungID` int NOT NULL,
+  `BaiHatID` int NOT NULL,
+  `NgayThich` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`NguoiDungID`,`BaiHatID`),
+  KEY `BaiHatID` (`BaiHatID`),
+  CONSTRAINT `baihatluotthich_ibfk_1` FOREIGN KEY (`NguoiDungID`) REFERENCES `nguoidung` (`NguoiDungID`) ON DELETE CASCADE,
+  CONSTRAINT `baihatluotthich_ibfk_2` FOREIGN KEY (`BaiHatID`) REFERENCES `baihat` (`BaiHatID`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `baihatluotthich` (optional)
+--
+
+LOCK TABLES `baihatluotthich` WRITE;
+/*!40000 ALTER TABLE `baihatluotthich` DISABLE KEYS */;
+/*!40000 ALTER TABLE `baihatluotthich` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `binhluan`
 --
 
