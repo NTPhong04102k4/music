@@ -40,9 +40,46 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
 }
 .see-all:hover {
   color: var(--player-primary-color);
+}
+
+/* Chart category tabs */
+.chart-tabs {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-left: auto;
+  margin-right: 16px;
+}
+
+.chart-tab {
+  background: transparent;
+  border: 1px solid var(--section-border);
+  color: var(--text-secondary);
+  padding: 7px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.chart-tab:hover {
+  border-color: var(--player-primary-color);
+  color: var(--player-primary-color);
+}
+
+.chart-tab.active {
+  background: rgba(155, 77, 224, 0.18);
+  border-color: rgba(155, 77, 224, 0.45);
+  color: var(--text-primary);
 }
 
 /* --- Lưới-Carousel (Carousel Grid) (cho (for) Albums/Partners) --- */

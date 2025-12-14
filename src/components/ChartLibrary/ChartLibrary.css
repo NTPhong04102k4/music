@@ -1,0 +1,88 @@
+.chart-library-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* reuse tab styles from MainContent */
+.chart-tabs {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.chart-tab {
+  background: transparent;
+  border: 1px solid var(--section-border);
+  color: var(--text-secondary);
+  padding: 7px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.chart-tab:hover {
+  border-color: var(--player-primary-color);
+  color: var(--player-primary-color);
+}
+
+.chart-tab.active {
+  background: rgba(155, 77, 224, 0.18);
+  border-color: rgba(155, 77, 224, 0.45);
+  color: var(--text-primary);
+}
+
+.chart-back-btn {
+  background: transparent;
+  border: 1px solid var(--section-border);
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chart-back-btn:hover {
+  color: var(--player-primary-color);
+  border-color: var(--player-primary-color);
+}
+
+.chart-error {
+  background: rgba(227, 80, 80, 0.12);
+  border: 1px solid rgba(227, 80, 80, 0.35);
+  color: #ffb4b4;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+
+/* reuse the same spinner styles (copied from admin) */
+.reload-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: var(--player-primary-color);
+  animation: spin 0.7s linear infinite;
+  margin-right: 8px;
+  vertical-align: -2px;
+}
+
+.reload-spinner.hidden {
+  visibility: hidden;
+  animation: none;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+

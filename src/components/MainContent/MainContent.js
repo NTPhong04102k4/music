@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import './MainContent.css'; 
 import { IoChevronForward, IoPlay, IoRefresh, IoEllipsisHorizontal } from 'react-icons/io5'; // Thêm import icon
 
-function MainContent({ onPlaySong, onViewAlbum, onOpenSongAction, isLoggedIn, favorites, onToggleFavorite }) {
+function MainContent({ onPlaySong, onViewAlbum, onOpenSongAction, onViewCharts, isLoggedIn, favorites, onToggleFavorite }) {
   const [suggestions, setSuggestions] = useState([]);
   const [chartData, setChartData] = useState([]);
   const [partners, setPartners] = useState([]);
+  const [chartCategory, setChartCategory] = useState('all'); // all | vn | foreign
 
   // --- FETCH DATA ---
   const fetchSuggestions = () => {
@@ -16,7 +17,7 @@ function MainContent({ onPlaySong, onViewAlbum, onOpenSongAction, isLoggedIn, fa
   };
 
   const fetchChartData = () => {
-    fetch('http://localhost:5001/api/charts')
+    fetch(`http://localhost:5001/api/charts?category=${chartCategory}`)
       .then(response => response.json())
       .then(data => setChartData(data))
       .catch(error => console.error('Error fetching charts:', error));
@@ -34,6 +35,11 @@ function MainContent({ onPlaySong, onViewAlbum, onOpenSongAction, isLoggedIn, fa
     fetchChartData();
     fetchPartners();
   }, []);
+
+  useEffect(() => {
+    fetchChartData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chartCategory]);
 
   return (
     <div className="main-content">
@@ -100,7 +106,36 @@ function MainContent({ onPlaySong, onViewAlbum, onOpenSongAction, isLoggedIn, fa
       <section className="content-section">
         <div className="section-header">
           <h2>Bảng Xếp Hạng Nhạc</h2>
-          <a href="#" className="see-all">TẤT CẢ <IoChevronForward /></a>
+          <div className="chart-tabs">
+            <button
+              type="button"
+              className={`chart-tab ${chartCategory === 'all' ? 'active' : ''}`}
+              onClick={() => setChartCategory('all')}
+            >
+              TẤT CẢ
+            </button>
+            <button
+              type="button"
+              className={`chart-tab ${chartCategory === 'vn' ? 'active' : ''}`}
+              onClick={() => setChartCategory('vn')}
+            >
+              NHẠC VIỆT
+            </button>
+            <button
+              type="button"
+              className={`chart-tab ${chartCategory === 'foreign' ? 'active' : ''}`}
+              onClick={() => setChartCategory('foreign')}
+            >
+              NHẠC NGOẠI
+            </button>
+          </div>
+          <button
+            type="button"
+            className="see-all"
+            onClick={() => onViewCharts && onViewCharts(chartCategory)}
+          >
+            TẤT CẢ <IoChevronForward />
+          </button>
         </div>
         <div className="chart-container">
           {Array.isArray(chartData) && chartData.map((song, index) => (

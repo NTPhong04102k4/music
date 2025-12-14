@@ -29,6 +29,7 @@ import AlbumManager from "./components/Admin/AlbumManager/AlbumManager";
 import ArtistManager from "./components/Admin/ArtistManager/ArtistManager";
 import AlbumLibrary from "./components/AlbumLibrary/AlbumLibrary";
 import ChangePasswordModal from "./components/ChangePasswordModal/ChangePasswordModal";
+import ChartLibrary from "./components/ChartLibrary/ChartLibrary";
 
 function App() {
   // --- TRẠNG THÁI (STATE) ---
@@ -49,6 +50,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [selectedItemId, setSelectedItemId] = useState(null);
+  const [chartCategory, setChartCategory] = useState("all"); // all | vn | foreign
 
   // State lưu gói VIP đang chọn để thanh toán
   const [selectedVipPackage, setSelectedVipPackage] = useState(null);
@@ -362,6 +364,12 @@ function App() {
     setSelectedItemId(null);
   }, []);
 
+  const handleViewCharts = useCallback((category = "all") => {
+    setCurrentView("charts");
+    setSelectedItemId(null);
+    setChartCategory(category);
+  }, []);
+
   const handleBackToMain = useCallback(() => {
     setCurrentView("main");
     setSelectedItemId(null);
@@ -601,12 +609,20 @@ function App() {
           <MainContent
             onPlaySong={handlePlaySong}
             onViewAlbum={handleViewAlbum}
+            onViewCharts={handleViewCharts}
             isLoggedIn={isLoggedIn}
             favorites={favorites} // Truyền xuống nếu cần dùng để hiển thị trạng thái
             // onToggleFavorite đã chuyển xuống PlayerControls nên có thể không cần ở đây nữa
             // trừ khi bạn muốn nút tim xuất hiện lại trên danh sách bài hát
             onAddToPlaylist={handleOpenAddToPlaylist}
             onOpenSongAction={handleOpenSongAction}
+          />
+        )}
+        {currentView === "charts" && (
+          <ChartLibrary
+            onBack={handleViewHome}
+            onPlaySong={handlePlaySong}
+            initialCategory={chartCategory}
           />
         )}
         {currentView === "albums" && (
