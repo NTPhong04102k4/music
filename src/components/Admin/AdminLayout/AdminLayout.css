@@ -115,6 +115,7 @@
     flex: 1;
     padding: 30px;
     overflow-y: auto;
+    scrollbar-gutter: stable;
 }
 
 /* Common Admin Styles */
@@ -130,12 +131,16 @@
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
+    table-layout: fixed;
 }
 
 .admin-table th, .admin-table td {
     padding: 12px 15px;
     text-align: left;
     border-bottom: 1px solid #eee;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .admin-table th {

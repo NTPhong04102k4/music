@@ -1,0 +1,169 @@
+.album-manager {
+  padding: 10px;
+}
+
+.manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.album-cover {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid #eee;
+}
+
+.album-preview {
+  margin-top: 10px;
+}
+
+.album-preview img {
+  width: 140px;
+  height: 140px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid #eee;
+}
+
+.artist-pick-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.artist-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #ddd;
+  border-radius: 999px;
+  padding: 8px 10px;
+  cursor: pointer;
+  user-select: none;
+  background: #fff;
+}
+
+.artist-pill.checked {
+  border-color: #9b4de0;
+  box-shadow: 0 0 0 3px rgba(155, 77, 224, 0.1);
+}
+
+.artist-pill input {
+  margin: 0;
+}
+
+/* Search-based artist picker */
+.artist-selected-row {
+  margin-bottom: 10px;
+}
+
+.artist-selected-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.artist-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(155, 77, 224, 0.12);
+  border: 1px solid rgba(155, 77, 224, 0.25);
+  color: #2f2739;
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+.artist-chip button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  color: #6b7280;
+}
+
+.artist-chip button:hover {
+  color: #111827;
+}
+
+.artist-search {
+  position: relative;
+}
+
+.artist-dropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 6px;
+  z-index: 20;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.artist-dropdown-item {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 10px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.artist-dropdown-item:hover {
+  background: rgba(155, 77, 224, 0.12);
+}
+
+/* spinning reload icon */
+.reload-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 2px solid rgba(0, 0, 0, 0.18);
+  border-top-color: #9b4de0;
+  animation: spin 0.7s linear infinite;
+  margin-right: 8px;
+  vertical-align: -2px;
+}
+
+.reload-spinner.hidden {
+  visibility: hidden;
+  animation: none;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* fixed column widths (avoid layout shift) */
+.album-table th:nth-child(1),
+.album-table td:nth-child(1) { width: 70px; }
+.album-table th:nth-child(2),
+.album-table td:nth-child(2) { width: 100px; }
+.album-table th:nth-child(3),
+.album-table td:nth-child(3) { width: 260px; }
+.album-table th:nth-child(4),
+.album-table td:nth-child(4) { width: 260px; }
+.album-table th:nth-child(5),
+.album-table td:nth-child(5) { width: 150px; }
+.album-table th:nth-child(6),
+.album-table td:nth-child(6) { width: 170px; }
+
+/* keep card height more stable when last page has fewer rows */
+.album-table-card {
+  min-height: 520px;
+}
+
+

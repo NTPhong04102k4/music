@@ -26,6 +26,7 @@ import Dashboard from "./components/Admin/Dashboard/Dashboard";
 import SongManager from "./components/Admin/SongManager/SongManager";
 import UserManager from "./components/Admin/UserManager/UserManager";
 import AlbumManager from "./components/Admin/AlbumManager/AlbumManager";
+import ArtistManager from "./components/Admin/ArtistManager/ArtistManager";
 import AlbumLibrary from "./components/AlbumLibrary/AlbumLibrary";
 import ChangePasswordModal from "./components/ChangePasswordModal/ChangePasswordModal";
 
@@ -501,6 +502,7 @@ function App() {
         {currentView === "admin-songs" && <SongManager />}
         {currentView === "admin-users" && <UserManager />}
         {currentView === "admin-albums" && <AlbumManager />}
+        {currentView === "admin-artists" && <ArtistManager />}
 
         {/* Thêm các trang admin khác ở đây */}
       </AdminLayout>

@@ -5,6 +5,7 @@ import {
   IoMusicalNotesOutline, 
   IoAlbumsOutline, 
   IoPeopleOutline, 
+  IoMicOutline,
   IoLogOutOutline,
   IoPersonCircleOutline
 } from 'react-icons/io5';
@@ -31,6 +32,20 @@ function AdminLayout({ children, onNavigate, currentView, onLogout }) {
               onClick={() => onNavigate('songs')}
             >
               <IoMusicalNotesOutline /> Quản Lý Bài Hát
+            </li>
+
+            <li 
+              className={currentView === 'albums' ? 'active' : ''}
+              onClick={() => onNavigate('albums')}
+            >
+              <IoAlbumsOutline /> Quản Lý Album
+            </li>
+
+            <li 
+              className={currentView === 'artists' ? 'active' : ''}
+              onClick={() => onNavigate('artists')}
+            >
+              <IoMicOutline /> Quản Lý Nghệ Sĩ
             </li>
             
             <li 

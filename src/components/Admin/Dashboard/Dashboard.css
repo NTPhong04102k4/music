@@ -1,0 +1,51 @@
+/* Dashboard (Admin - Tổng quan) */
+.dashboard {
+  padding: 20px;
+}
+
+.dashboard h2 {
+  margin: 0 0 12px 0;
+}
+
+.dashboard-charts {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.dashboard-chart-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  padding: 16px;
+}
+
+.dashboard-chart-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.dashboard-chart-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.dashboard-chart-header span {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.dashboard-chart-body {
+  height: 320px;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-charts {
+    grid-template-columns: 1fr;
+  }
+}
+

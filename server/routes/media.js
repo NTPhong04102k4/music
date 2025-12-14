@@ -67,13 +67,102 @@ router.get("/image/song/:filename", (req, res) => {
 // Phục vụ file ảnh ALBUM
 router.get("/image/album/:filename", (req, res) => {
   const { filename } = req.params;
-  const filePath = path.join(__dirname, "..", "uploads", "images", "album", filename);
-  res.sendFile(filePath, (err) => {
-    if (err) {
-      console.error("Error sending album image file:", err);
-      res.status(404).send("File not found");
+
+  // Hỗ trợ cả trường hợp filename có extension hoặc không có extension
+  const ext = path.extname(filename);
+  const candidates = ext
+    ? [filename]
+    : [
+        `${filename}.jpg`,
+        `${filename}.png`,
+        `${filename}.jpeg`,
+        `${filename}.webp`,
+      ];
+
+  // 1) Thử tìm trong public/images/album trước
+  for (const name of candidates) {
+    const publicPath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "public",
+      "images",
+      "album",
+      name
+    );
+    if (fs.existsSync(publicPath)) {
+      res.sendFile(publicPath);
+      return;
     }
-  });
+  }
+
+  // 2) Nếu không có, thử trong uploads/images/album
+  for (const name of candidates) {
+    const uploadPath = path.join(
+      __dirname,
+      "..",
+      "uploads",
+      "images",
+      "album",
+      name
+    );
+    if (fs.existsSync(uploadPath)) {
+      res.sendFile(uploadPath);
+      return;
+    }
+  }
+
+  res.status(404).send("File not found");
+});
+
+// Phục vụ file ảnh NGHỆ SĨ
+router.get("/image/artist/:filename", (req, res) => {
+  const { filename } = req.params;
+
+  const ext = path.extname(filename);
+  const candidates = ext
+    ? [filename]
+    : [
+        `${filename}.jpg`,
+        `${filename}.png`,
+        `${filename}.jpeg`,
+        `${filename}.webp`,
+      ];
+
+  // 1) Thử trong public/images/artist
+  for (const name of candidates) {
+    const publicPath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "public",
+      "images",
+      "artist",
+      name
+    );
+    if (fs.existsSync(publicPath)) {
+      res.sendFile(publicPath);
+      return;
+    }
+  }
+
+  // 2) Thử trong uploads/images/artist
+  for (const name of candidates) {
+    const uploadPath = path.join(
+      __dirname,
+      "..",
+      "uploads",
+      "images",
+      "artist",
+      name
+    );
+    if (fs.existsSync(uploadPath)) {
+      res.sendFile(uploadPath);
+      return;
+    }
+  }
+
+  res.status(404).send("File not found");
 });
 
 // Ảnh Avatar (API phục vụ file avatar)
@@ -90,5 +179,3 @@ router.get("/image/avatar/:filename", (req, res) => {
 });
 
 module.exports = router;
-
-
