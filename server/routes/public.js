@@ -53,6 +53,13 @@ async function ensureLyricsTable() {
   `);
 }
 
+let _lyricsTableEnsured = false;
+async function ensureLyricsTableOnce() {
+  if (_lyricsTableEnsured) return;
+  await ensureLyricsTable();
+  _lyricsTableEnsured = true;
+}
+
 function pickPrimaryArtist(artists) {
   const s = String(artists || "").trim();
   if (!s) return "";
@@ -177,83 +184,46 @@ router.get("/songs/:songId/lyrics", async (req, res) => {
     const songId = Number(req.params.songId);
     if (!songId) return res.status(400).json({ error: "songId không hợp lệ" });
 
-    // 0) Prefer DB synced lyrics (LRC) if exists
-    await ensureLyricsTable();
-    const [dbRows] = await pool.execute(
-      "SELECT BaiHatID, LrcText, PlainText, LyricsVI, LyricsEN, UpdatedAt FROM loibaihat WHERE BaiHatID = ?",
-      [songId]
-    );
-    if (Array.isArray(dbRows) && dbRows.length) {
-      const row = dbRows[0];
-      const lrc = row.LrcText ? String(row.LrcText) : null;
-      const original =
-        row.PlainText && String(row.PlainText).trim()
-          ? String(row.PlainText)
-          : lrc
-          ? lrcToPlain(lrc)
-          : "";
+    // User requirement: no lyrics table; skip external fetch/translate to avoid long loading/timeouts.
+    // If table exists and has data, return it. Otherwise return quickly with nulls.
+    try {
+      const [dbRows] = await pool.execute(
+        "SELECT BaiHatID, LrcText, PlainText, LyricsVI, LyricsEN, UpdatedAt FROM loibaihat WHERE BaiHatID = ?",
+        [songId]
+      );
 
-      return res.json({
-        source: "db",
-        songId,
-        lrc,
-        original: original || null,
-        vi: row.LyricsVI ? String(row.LyricsVI) : null,
-        en: row.LyricsEN ? String(row.LyricsEN) : null,
-        updatedAt: row.UpdatedAt || null,
-      });
+      if (Array.isArray(dbRows) && dbRows.length) {
+        const row = dbRows[0];
+        const lrc = row.LrcText ? String(row.LrcText) : null;
+        const original =
+          row.PlainText && String(row.PlainText).trim()
+            ? String(row.PlainText)
+            : lrc
+            ? lrcToPlain(lrc)
+            : null;
+
+        return res.json({
+          source: "db",
+          songId,
+          lrc,
+          original,
+          vi: row.LyricsVI ? String(row.LyricsVI) : null,
+          en: row.LyricsEN ? String(row.LyricsEN) : null,
+          updatedAt: row.UpdatedAt || null,
+        });
+      }
+    } catch (e) {
+      // Table missing / no permission => ignore and return empty
     }
 
-    const [rows] = await pool.execute(
-      `
-      SELECT b.TieuDe as title,
-             GROUP_CONCAT(DISTINCT n.TenNgheSi SEPARATOR ', ') as artists
-      FROM baihat b
-      LEFT JOIN baihat_nghesi bn ON b.BaiHatID = bn.BaiHatID
-      LEFT JOIN nghesi n ON bn.NgheSiID = n.NgheSiID
-      WHERE b.BaiHatID = ?
-      GROUP BY b.BaiHatID
-      LIMIT 1
-    `,
-      [songId]
-    );
-    if (!rows || rows.length === 0) {
-      return res.status(404).json({ error: "Song not found" });
-    }
-
-    const title = String(rows[0].title || "");
-    const artists = String(rows[0].artists || "");
-    const primaryArtist = pickPrimaryArtist(artists);
-
-    const original = await fetchLyricsFromLyricsOvh({
-      artist: primaryArtist,
-      title,
-    });
-
-    if (!original) {
-      return res.json({
-        source: "lyrics.ovh",
-        songId,
-        lrc: null,
-        original: null,
-        vi: null,
-        en: null,
-      });
-    }
-
-    // Translate to VI + EN
-    const [vi, en] = await Promise.all([
-      translateGoogleFree(original, "vi").catch(() => ""),
-      translateGoogleFree(original, "en").catch(() => ""),
-    ]);
-
-    res.json({
-      source: "lyrics.ovh + translate.googleapis.com",
+    return res.json({
+      source: "none",
       songId,
       lrc: null,
-      original,
-      vi: vi || null,
-      en: en || null,
+      original: null,
+      vi: null,
+      en: null,
+      updatedAt: null,
     });
   } catch (error) {
     console.error("Error song lyrics:", error);
