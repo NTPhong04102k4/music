@@ -52,8 +52,14 @@ function App() {
 
   // (Admin view state đã được gỡ vì chưa dùng ở UI hiện tại)
 
-  // currentView có thể là: 'main', 'album', 'favorites'
+  // currentView có thể là: 'main', 'album', 'favorites', 'admin-dashboard', 'admin-songs', ...
   const [currentView, setCurrentView] = useState("main");
+
+  const getSavedAdminView = () => {
+    const raw = String(localStorage.getItem("adminView") || "").trim();
+    const allowed = new Set(["dashboard", "songs", "albums", "artists", "users"]);
+    return allowed.has(raw) ? raw : "dashboard";
+  };
   // Trạng thái UI
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showPlaylistQueue, setShowPlaylistQueue] = useState(false);
@@ -150,7 +156,10 @@ function App() {
       setUser(parsedUser);
 
       // Nếu là admin, chuyển thẳng vào dashboard khi reload (tùy chọn)
-      if (parsedUser.role === "admin") setCurrentView("admin-dashboard");
+      if (parsedUser.role === "admin") {
+        const adminView = getSavedAdminView();
+        setCurrentView(`admin-${adminView}`);
+      }
     }
   }, []);
 
@@ -464,7 +473,8 @@ function App() {
     setShowAuthModal(false);
 
     if (userData.role === "admin") {
-      setCurrentView("admin-dashboard"); // Chuyển sang Admin
+      const adminView = getSavedAdminView();
+      setCurrentView(`admin-${adminView}`); // Chuyển sang Admin (giữ tab trước đó)
     } else {
       setCurrentView("main"); // Chuyển sang User trang chủ
     }
@@ -561,7 +571,12 @@ function App() {
     return (
       <AdminLayout
         currentView={currentView.replace("admin-", "")} // dashboard, songs
-        onNavigate={(view) => setCurrentView(`admin-${view}`)}
+        onNavigate={(view) => {
+          try {
+            localStorage.setItem("adminView", String(view || "dashboard"));
+          } catch {}
+          setCurrentView(`admin-${view}`);
+        }}
         onLogout={handleLogout}
       >
         {currentView === "admin-dashboard" && <Dashboard />}

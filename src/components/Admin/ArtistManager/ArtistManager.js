@@ -13,6 +13,10 @@ function ArtistManager() {
   const limit = 5;
   const refreshTimerRef = useRef(null);
 
+  // Search (server-side)
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -23,6 +27,13 @@ function ArtistManager() {
   });
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(String(searchInput || "").trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const fetchArtists = async (
     page = 1,
@@ -37,8 +48,11 @@ function ArtistManager() {
         setError(t("admin.common.missingToken"));
         return;
       }
+      const q = debouncedQuery;
       const res = await fetch(
-        `http://localhost:5001/api/admin/artists?page=${page}&limit=${limit}`,
+        `http://localhost:5001/api/admin/artists?page=${page}&limit=${limit}${
+          q ? `&q=${encodeURIComponent(q)}` : ""
+        }`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -83,6 +97,11 @@ function ArtistManager() {
     fetchArtists(1, { showGlobalLoading: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    fetchArtists(1, { showGlobalLoading: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedQuery]);
 
   useEffect(() => {
     return () => {
@@ -210,7 +229,20 @@ function ArtistManager() {
     <div className="artist-manager">
       <div className="manager-header">
         <h2>{t("admin.artistManager.title")}</h2>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <input
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder={t("admin.common.search.placeholderArtists")}
+            style={{
+              height: 36,
+              padding: "8px 10px",
+              border: "1px solid #ddd",
+              borderRadius: 8,
+              minWidth: 260,
+              outline: "none",
+            }}
+          />
           <button
             className="admin-btn"
             type="button"
@@ -241,7 +273,7 @@ function ArtistManager() {
         <table className="admin-table artist-table">
           <thead>
             <tr>
-              <th>ID</th>
+              <th>STT</th>
               <th>{t("admin.artistManager.columns.avatar")}</th>
               <th>{t("admin.artistManager.columns.name")}</th>
               <th>{t("admin.artistManager.columns.bio")}</th>
@@ -249,9 +281,9 @@ function ArtistManager() {
             </tr>
           </thead>
           <tbody>
-            {artists.map((a) => (
+            {artists.map((a, idx) => (
               <tr key={a.id}>
-                <td>#{a.id}</td>
+                <td>{(currentPage - 1) * limit + idx + 1}</td>
                 <td>
                   <img
                     className="artist-avatar"

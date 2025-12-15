@@ -13,6 +13,7 @@ function ListenHistory({
   const [history, setHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedKey, setSelectedKey] = useState(null); // only highlight 1 selected item (by index)
 
   useEffect(() => {
     const controller = new AbortController();
@@ -74,19 +75,6 @@ function ListenHistory({
     <div className="listen-history">
       <div className="history-header">
         <h2>{t("listenHistory.title")}</h2>
-        <button
-          type="button"
-          className="zm-btn play-all-btn"
-          onClick={() => history.length > 0 && onPlaySong(history[0], history)}
-          disabled={history.length === 0}
-          title={
-            history.length === 0
-              ? t("listenHistory.playAllTitleEmpty")
-              : t("listenHistory.playAllTitle")
-          }
-        >
-          <IoPlay /> {t("listenHistory.playAllButton")}
-        </button>
       </div>
 
       <div className="history-list">
@@ -103,65 +91,77 @@ function ListenHistory({
             <p>{t("listenHistory.empty")}</p>
           </div>
         ) : (
-          history.map((song, index) => (
-            <div
-              className="history-item"
-              key={`${song.id}-${song.playedAt || "na"}-${index}`} // Key unique vì 1 bài có thể nghe nhiều lần
-              onClick={() => onPlaySong(song, history)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onPlaySong(song, history);
-                }
-              }}
-            >
-              <div className="history-item-left">
-                <img
-                  src={song.imageUrl}
-                  alt={song.title}
-                  className="history-item-cover"
-                  onError={(e) => {
-                    e.target.src =
-                      "https://placehold.co/60x60/7a3c9e/ffffff?text=Err";
-                  }}
-                />
-                <div className="history-item-info">
-                  <h4>{song.title}</h4>
-                  <p>{song.artists}</p>
+          history.map((song, index) => {
+            const rowKey = `${song.id}-${song.playedAt || "na"}-${index}`;
+            const isSelected = selectedKey === rowKey;
+            const isRowPlaying =
+              isSelected && String(song.id) === String(currentSong?.id);
+
+            return (
+              <div
+                className="history-item"
+                key={rowKey} // Key unique vì 1 bài có thể nghe nhiều lần
+                onClick={() => {
+                  setSelectedKey(rowKey);
+                  // Only play the selected song (no "play all" / no history queue)
+                  onPlaySong(song, [song]);
+                }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSelectedKey(rowKey);
+                    onPlaySong(song, [song]);
+                  }
+                }}
+              >
+                <div className="history-item-left">
+                  <img
+                    src={song.imageUrl}
+                    alt={song.title}
+                    className="history-item-cover"
+                    onError={(e) => {
+                      e.target.src =
+                        "https://placehold.co/60x60/7a3c9e/ffffff?text=Err";
+                    }}
+                  />
+                  <div className="history-item-info">
+                    <h4>{song.title}</h4>
+                    <p>{song.artists}</p>
+                  </div>
+                </div>
+                <div className="history-item-right">
+                  {isRowPlaying ? (
+                    <button
+                      type="button"
+                      className="history-now-btn"
+                      title={
+                        isPlaying
+                          ? t("favoritesLibrary.tooltips.pause")
+                          : t("favoritesLibrary.tooltips.play")
+                      }
+                      aria-label={
+                        isPlaying
+                          ? t("favoritesLibrary.tooltips.pause")
+                          : t("favoritesLibrary.tooltips.play")
+                      }
+                      onClick={(e) => {
+                        e?.stopPropagation?.();
+                        onTogglePlayPause?.();
+                      }}
+                    >
+                      {isPlaying ? <IoPause /> : <IoPlay />}
+                    </button>
+                  ) : (
+                    <span className="time-ago">
+                      <IoTimeOutline /> {formatTimeAgo(song.playedAt)}
+                    </span>
+                  )}
                 </div>
               </div>
-              <div className="history-item-right">
-                {String(song.id) === String(currentSong?.id) ? (
-                  <button
-                    type="button"
-                    className="history-now-btn"
-                    title={
-                      isPlaying
-                        ? t("favoritesLibrary.tooltips.pause")
-                        : t("favoritesLibrary.tooltips.play")
-                    }
-                    aria-label={
-                      isPlaying
-                        ? t("favoritesLibrary.tooltips.pause")
-                        : t("favoritesLibrary.tooltips.play")
-                    }
-                    onClick={(e) => {
-                      e?.stopPropagation?.();
-                      onTogglePlayPause?.();
-                    }}
-                  >
-                    {isPlaying ? <IoPause /> : <IoPlay />}
-                  </button>
-                ) : (
-                  <span className="time-ago">
-                    <IoTimeOutline /> {formatTimeAgo(song.playedAt)}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

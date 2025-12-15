@@ -5,11 +5,23 @@ function UserManager() {
   const { t, i18n } = useTranslation();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  const fetchUsers = () => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(String(searchInput || "").trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  const fetchUsers = (q = debouncedQuery) => {
     const token = localStorage.getItem("token");
     setLoading(true);
-    fetch("http://localhost:5001/api/admin/users", {
+    const url =
+      "http://localhost:5001/api/admin/users" + (q ? `?q=${encodeURIComponent(q)}` : "");
+
+    fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -21,8 +33,9 @@ function UserManager() {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    fetchUsers(debouncedQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedQuery]);
 
   const handleToggleStatus = (user) => {
     // Nếu đang active -> chuyển sang banned (khóa), ngược lại mở khóa
@@ -55,7 +68,7 @@ function UserManager() {
       .then((res) => res.json())
       .then(() => {
         alert(t("admin.userManager.alerts.updateStatusSuccess"));
-        fetchUsers(); // Tải lại danh sách
+        fetchUsers(debouncedQuery); // Tải lại danh sách
       })
       .catch(() => alert(t("admin.userManager.alerts.updateStatusFailed")));
   };
@@ -72,12 +85,34 @@ function UserManager() {
 
   return (
     <div className="user-manager">
-      <h2>{t("admin.userManager.title")}</h2>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 16,
+        }}
+      >
+        <h2 style={{ margin: 0 }}>{t("admin.userManager.title")}</h2>
+        <input
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder={t("admin.common.search.placeholderUsers")}
+          style={{
+            height: 36,
+            padding: "8px 10px",
+            border: "1px solid #ddd",
+            borderRadius: 8,
+            minWidth: 260,
+            outline: "none",
+          }}
+        />
+      </div>
       <div className="admin-card">
         <table className="admin-table">
           <thead>
             <tr>
-              <th>ID</th>
+              <th>STT</th>
               <th>{t("admin.userManager.columns.username")}</th>
               <th>{t("admin.userManager.columns.email")}</th>
               <th>{t("admin.userManager.columns.joinDate")}</th>
@@ -86,9 +121,9 @@ function UserManager() {
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
+            {users.map((user, idx) => (
               <tr key={user.id}>
-                <td>{user.id}</td>
+                <td>{idx + 1}</td>
                 <td>{user.username}</td>
                 <td>{user.email}</td>
                 <td>

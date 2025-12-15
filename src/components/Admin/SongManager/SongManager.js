@@ -9,11 +9,17 @@ function SongManager() {
   const [showModal, setShowModal] = useState(false); // Đổi tên từ showAddModal thành showModal cho chung
   const [isEditing, setIsEditing] = useState(false); // State xác định chế độ Thêm/Sửa
   const [editingId, setEditingId] = useState(null); // ID bài hát đang sửa
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   // State phân trang
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
+
+  // Search (server-side)
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
 
   // State cho form (dùng chung cho thêm và sửa)
   const [formData, setFormData] = useState({
@@ -22,6 +28,23 @@ function SongManager() {
     audioUrl: "",
     imageUrl: "",
   });
+  const [audioFile, setAudioFile] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState("");
+
+  const BASE_AUDIO_URL = "http://localhost:5001/api/audio/";
+  const BASE_IMAGE_URL = "http://localhost:5001/api/image/song/";
+
+  useEffect(() => {
+    if (!imageFile) {
+      setImagePreviewUrl("");
+      return;
+    }
+
+    const url = URL.createObjectURL(imageFile);
+    setImagePreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [imageFile]);
 
   // Lyrics (LRC) upload
   const [lyricsFile, setLyricsFile] = useState(null);
@@ -29,11 +52,27 @@ function SongManager() {
   const [lyricsMessage, setLyricsMessage] = useState("");
   const [showLyricsOption, setShowLyricsOption] = useState(false);
 
-  const fetchSongs = (page = 1) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(String(searchInput || "").trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    // Reset to first page when changing query
+    if (currentPage !== 1) setCurrentPage(1);
+  }, [debouncedQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fetchSongs = (page = 1, q = debouncedQuery) => {
     const token = localStorage.getItem("token");
     setLoading(true);
 
-    fetch(`http://localhost:5001/api/admin/songs?page=${page}&limit=${limit}`, {
+    const url =
+      `http://localhost:5001/api/admin/songs?page=${page}&limit=${limit}` +
+      (q ? `&q=${encodeURIComponent(q)}` : "");
+
+    fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -77,8 +116,9 @@ function SongManager() {
   };
 
   useEffect(() => {
-    fetchSongs(currentPage);
-  }, [currentPage]);
+    fetchSongs(currentPage, debouncedQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, debouncedQuery]);
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -96,7 +136,7 @@ function SongManager() {
         .then((res) => res.json())
         .then((data) => {
           alert(data.message || t("admin.songManager.alerts.deleteSuccess"));
-          fetchSongs(currentPage);
+          fetchSongs(currentPage, debouncedQuery);
         })
         .catch(() => alert(t("admin.songManager.alerts.deleteFailed")));
     }
@@ -149,6 +189,9 @@ function SongManager() {
   const openAddModal = () => {
     setIsEditing(false);
     setFormData({ title: "", artist: "", audioUrl: "", imageUrl: "" });
+    setAudioFile(null);
+    setImageFile(null);
+    setSubmitError("");
     setShowModal(true);
   };
 
@@ -164,32 +207,46 @@ function SongManager() {
       audioUrl: song.audioUrl || "",
       imageUrl: song.imageUrl || "",
     });
+    setAudioFile(null);
+    setImageFile(null);
+    setSubmitError("");
     setShowModal(true);
   };
 
+  const mapFetchErrorToMessage = (err) => {
+    const raw = String(err?.message || err || "");
+    if (raw.toLowerCase().includes("failed to fetch")) {
+      return (
+        "Không kết nối được API (Failed to fetch). " +
+        "Kiểm tra: backend `http://localhost:5001` đang chạy, FRONTEND_URL cho CORS đúng `http://localhost:3000`, và không bị chặn mạng."
+      );
+    }
+    return raw || t("errors.serverConnection");
+  };
+
   // Xử lý submit form (chung cho cả thêm và sửa)
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
+    setSubmitError("");
 
-    if (!formData.title || !formData.audioUrl) {
-      alert(t("admin.songManager.alerts.missingRequiredFields"));
+    if (!formData.title) {
+      setSubmitError(t("admin.songManager.alerts.missingRequiredFields"));
       return;
     }
 
-    // Strip base URL prefix from audioUrl and imageUrl before sending
-    const baseAudioUrl = "http://localhost:5001/api/audio/";
-    const baseImageUrl = "http://localhost:5001/api/image/song/";
+    // If not uploading a new audio file, try to keep existing filename (strip base URL if needed)
+    const existingAudioValue = formData.audioUrl?.startsWith(BASE_AUDIO_URL)
+      ? formData.audioUrl.substring(BASE_AUDIO_URL.length)
+      : formData.audioUrl;
 
-    // Create a shallow copy to avoid mutating state directly
-    const submitData = { ...formData };
+    const existingImageValue = formData.imageUrl?.startsWith(BASE_IMAGE_URL)
+      ? formData.imageUrl.substring(BASE_IMAGE_URL.length)
+      : formData.imageUrl;
 
-    if (submitData.audioUrl && submitData.audioUrl.startsWith(baseAudioUrl)) {
-      submitData.audioUrl = submitData.audioUrl.substring(baseAudioUrl.length);
-    }
-
-    if (submitData.imageUrl && submitData.imageUrl.startsWith(baseImageUrl)) {
-      submitData.imageUrl = submitData.imageUrl.substring(baseImageUrl.length);
+    if (!audioFile && !existingAudioValue) {
+      setSubmitError(t("admin.songManager.alerts.missingRequiredFields"));
+      return;
     }
 
     const url = isEditing
@@ -198,29 +255,58 @@ function SongManager() {
 
     const method = isEditing ? "PUT" : "POST";
 
-    fetch(url, {
-      method: method,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(submitData),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.message || data.id) {
-          alert(
-            isEditing
-              ? t("admin.songManager.alerts.updateSuccess")
-              : t("admin.songManager.alerts.createSuccess")
-          );
-          setShowModal(false);
-          fetchSongs(currentPage); // Tải lại danh sách
-        } else {
-          alert(data.error || t("admin.songManager.errors.genericError"));
-        }
-      })
-      .catch(() => alert(t("errors.serverConnection")));
+    const form = new FormData();
+    form.append("title", formData.title);
+    form.append("artist", formData.artist || "");
+
+    if (audioFile) {
+      form.append("audioFile", audioFile);
+    } else if (existingAudioValue) {
+      form.append("audioUrl", existingAudioValue);
+    }
+
+    if (imageFile) {
+      form.append("imageFile", imageFile);
+    } else if (existingImageValue) {
+      form.append("imageUrl", existingImageValue);
+    } else if (isEditing) {
+      // Explicitly keep current by omitting imageUrl (backend will preserve)
+    }
+
+    try {
+      setSubmitLoading(true);
+      const res = await fetch(url, {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: form,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          data?.error || t("admin.songManager.errors.genericError")
+        );
+      }
+
+      alert(
+        isEditing
+          ? t("admin.songManager.alerts.updateSuccess")
+          : t("admin.songManager.alerts.createSuccess")
+      );
+      setShowModal(false);
+      setAudioFile(null);
+      setImageFile(null);
+      fetchSongs(currentPage);
+    } catch (err) {
+      const msg = mapFetchErrorToMessage(err);
+      setSubmitError(msg);
+      alert(msg);
+      // keep modal open so user can see error details
+      console.error("Song submit error:", err);
+    } finally {
+      setSubmitLoading(false);
+    }
   };
 
   const handleInputChange = (e) => {
@@ -244,16 +330,31 @@ function SongManager() {
         }}
       >
         <h2>{t("admin.songManager.title")}</h2>
-        <button className="admin-btn btn-primary" onClick={openAddModal}>
-          + {t("admin.songManager.addNew")}
-        </button>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <input
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder={t("admin.common.search.placeholderSongs")}
+            style={{
+              height: 36,
+              padding: "8px 10px",
+              border: "1px solid #ddd",
+              borderRadius: 8,
+              minWidth: 260,
+              outline: "none",
+            }}
+          />
+          <button className="admin-btn btn-primary" onClick={openAddModal}>
+            + {t("admin.songManager.addNew")}
+          </button>
+        </div>
       </div>
 
       <div className="admin-card">
         <table className="admin-table">
           <thead>
             <tr>
-              <th>ID</th>
+              <th>STT</th>
               <th>{t("admin.songManager.columns.title")}</th>
               <th>{t("admin.songManager.columns.artist")}</th>
               <th>{t("admin.songManager.columns.listens")}</th>
@@ -262,9 +363,9 @@ function SongManager() {
             </tr>
           </thead>
           <tbody>
-            {songs.map((song) => (
+            {songs.map((song, idx) => (
               <tr key={song.id}>
-                <td>#{song.id}</td>
+                <td>{(currentPage - 1) * limit + idx + 1}</td>
                 <td>
                   <div
                     style={{
@@ -350,9 +451,35 @@ function SongManager() {
                   ? t("admin.songManager.modal.editTitle")
                   : t("admin.songManager.modal.createTitle")}
               </h3>
-              <button onClick={() => setShowModal(false)}>×</button>
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setAudioFile(null);
+                  setImageFile(null);
+                  setSubmitError("");
+                }}
+              >
+                ×
+              </button>
             </div>
             <form onSubmit={handleSubmit}>
+              {submitError ? (
+                <div
+                  style={{
+                    background: "rgba(220, 53, 69, 0.08)",
+                    border: "1px solid rgba(220, 53, 69, 0.35)",
+                    color: "#b02a37",
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    marginBottom: 12,
+                    fontSize: 13,
+                    lineHeight: 1.35,
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {submitError}
+                </div>
+              ) : null}
               <div className="form-group">
                 <label>{t("admin.songManager.form.titleLabel")}</label>
                 <input
@@ -379,23 +506,103 @@ function SongManager() {
               <div className="form-group">
                 <label>{t("admin.songManager.form.audioUrlLabel")}</label>
                 <input
-                  type="text"
-                  name="audioUrl"
-                  value={formData.audioUrl}
-                  onChange={handleInputChange}
-                  required
-                  placeholder={t("admin.songManager.form.audioUrlPlaceholder")}
+                  type="file"
+                  accept="audio/*,video/mp4"
+                  onChange={(e) => {
+                    const f = e.target.files && e.target.files[0];
+                    if (!f) {
+                      setAudioFile(null);
+                      return;
+                    }
+                    const type = String(f.type || "").toLowerCase();
+                    const ok =
+                      type.startsWith("audio/") ||
+                      type === "video/mp4" ||
+                      type === "audio/mp4" ||
+                      type === "application/octet-stream";
+                    if (!ok) {
+                      alert(
+                        "File âm thanh không hợp lệ. Hãy chọn mp3/m4a/mp4."
+                      );
+                      e.target.value = "";
+                      setAudioFile(null);
+                      return;
+                    }
+                    setAudioFile(f);
+                  }}
+                  required={!isEditing}
                 />
+                {isEditing && formData.audioUrl ? (
+                  <div style={{ marginTop: 8 }}>
+                    <div
+                      style={{ fontSize: 12, opacity: 0.8, marginBottom: 6 }}
+                    >
+                      Audio hiện tại:
+                    </div>
+                    <audio
+                      controls
+                      src={formData.audioUrl}
+                      style={{ width: "100%" }}
+                    />
+                  </div>
+                ) : null}
+                {audioFile ? (
+                  <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6 }}>
+                    {audioFile.name}
+                  </div>
+                ) : null}
               </div>
               <div className="form-group">
                 <label>{t("admin.songManager.form.imageUrlLabel")}</label>
                 <input
-                  type="text"
-                  name="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={handleInputChange}
-                  placeholder={t("admin.songManager.form.imageUrlPlaceholder")}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const f = e.target.files && e.target.files[0];
+                    if (!f) {
+                      setImageFile(null);
+                      return;
+                    }
+                    const type = String(f.type || "").toLowerCase();
+                    if (!type.startsWith("image/")) {
+                      alert(
+                        "File ảnh không hợp lệ. Bạn đang chọn nhầm mp3/mp4?"
+                      );
+                      e.target.value = "";
+                      setImageFile(null);
+                      return;
+                    }
+                    setImageFile(f);
+                  }}
                 />
+                <div style={{ marginTop: 8 }}>
+                  {imagePreviewUrl ? (
+                    <img
+                      src={imagePreviewUrl}
+                      alt=""
+                      style={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: 6,
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : isEditing && formData.imageUrl ? (
+                    <img
+                      src={formData.imageUrl}
+                      alt=""
+                      style={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: 6,
+                        objectFit: "cover",
+                      }}
+                      onError={(e) =>
+                        (e.target.src = "https://placehold.co/80x80")
+                      }
+                    />
+                  ) : null}
+                </div>
               </div>
 
               {isEditing && (
@@ -460,11 +667,20 @@ function SongManager() {
                 <button
                   type="button"
                   className="admin-btn btn-secondary"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => {
+                    setShowModal(false);
+                    setAudioFile(null);
+                    setImageFile(null);
+                    setSubmitError("");
+                  }}
                 >
                   {t("songDetailPage.actions.cancel")}
                 </button>
-                <button type="submit" className="admin-btn btn-primary">
+                <button
+                  type="submit"
+                  className="admin-btn btn-primary"
+                  disabled={submitLoading}
+                >
                   {isEditing
                     ? t("admin.songManager.modal.updateButton")
                     : t("admin.songManager.modal.createButton")}

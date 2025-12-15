@@ -280,7 +280,7 @@ function AlbumManager() {
         <table className="admin-table album-table">
           <thead>
             <tr>
-              <th>ID</th>
+              <th>STT</th>
               <th>{t("admin.albumManager.columns.cover")}</th>
               <th>{t("admin.albumManager.columns.title")}</th>
               <th>{t("admin.albumManager.columns.artists")}</th>
@@ -289,9 +289,9 @@ function AlbumManager() {
             </tr>
           </thead>
           <tbody>
-            {albums.map((a) => (
+            {albums.map((a, idx) => (
               <tr key={a.id}>
-                <td>#{a.id}</td>
+                <td>{idx + 1}</td>
                 <td>
                   <img
                     className="album-cover"

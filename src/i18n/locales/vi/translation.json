@@ -528,6 +528,11 @@
       "createSuccess": "Thêm thành công",
       "updateSuccess": "Cập nhật thành công",
       "cannotLoadData": "Không tải được dữ liệu",
+      "search": {
+        "placeholderSongs": "Tìm kiếm bài hát / nghệ sĩ...",
+        "placeholderArtists": "Tìm kiếm nghệ sĩ...",
+        "placeholderUsers": "Tìm kiếm người dùng (username/email)..."
+      },
       "actions": {
         "edit": "Sửa",
         "delete": "Xóa",

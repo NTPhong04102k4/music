@@ -528,6 +528,11 @@
       "createSuccess": "Created successfully.",
       "updateSuccess": "Updated successfully.",
       "cannotLoadData": "Unable to load data",
+      "search": {
+        "placeholderSongs": "Search songs / artists...",
+        "placeholderArtists": "Search artists...",
+        "placeholderUsers": "Search users (username/email)..."
+      },
       "actions": {
         "edit": "Edit",
         "delete": "Delete",

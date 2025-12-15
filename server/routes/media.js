@@ -9,59 +9,93 @@ const router = express.Router();
 router.get("/audio/:filename", (req, res) => {
   const { filename } = req.params;
 
-  // Thử tìm trong public/audio trước
-  let filePath = path.join(
-    __dirname,
-    "..",
-    "..",
-    "public",
-    "audio",
-    filename + ".mp3"
-  );
+  const ext = path.extname(filename);
+  const candidates = ext
+    ? [filename]
+    : [
+        `${filename}.mp3`,
+        `${filename}.mp4`,
+        `${filename}.m4a`,
+        `${filename}.wav`,
+        `${filename}.ogg`,
+      ];
 
-  if (fs.existsSync(filePath)) {
-    res.sendFile(filePath);
-    return;
+  // 1) Thử tìm trong public/audio trước
+  for (const name of candidates) {
+    const publicPath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "public",
+      "audio",
+      name
+    );
+    if (fs.existsSync(publicPath)) {
+      res.sendFile(publicPath);
+      return;
+    }
   }
 
-  // Nếu không có, thử trong uploads
-  filePath = path.join(__dirname, "..", "uploads", "audio", filename);
-  res.sendFile(filePath, (err) => {
-    if (err) {
-      console.error("Error sending audio file:", err);
-      res.status(404).send("File not found");
+  // 2) Nếu không có, thử trong uploads/audio
+  for (const name of candidates) {
+    const uploadPath = path.join(__dirname, "..", "uploads", "audio", name);
+    if (fs.existsSync(uploadPath)) {
+      res.sendFile(uploadPath);
+      return;
     }
-  });
+  }
+
+  res.status(404).send("File not found");
 });
 
 // Phục vụ file ảnh BÀI HÁT
 router.get("/image/song/:filename", (req, res) => {
   const { filename } = req.params;
 
-  // Thử tìm trong public/images/song trước
-  let filePath = path.join(
-    __dirname,
-    "..",
-    "..",
-    "public",
-    "images",
-    "song",
-    filename + ".jpg"
-  );
+  const ext = path.extname(filename);
+  const candidates = ext
+    ? [filename]
+    : [
+        `${filename}.jpg`,
+        `${filename}.png`,
+        `${filename}.jpeg`,
+        `${filename}.webp`,
+      ];
 
-  if (fs.existsSync(filePath)) {
-    res.sendFile(filePath);
-    return;
+  // 1) Thử tìm trong public/images/song trước
+  for (const name of candidates) {
+    const publicPath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "public",
+      "images",
+      "song",
+      name
+    );
+    if (fs.existsSync(publicPath)) {
+      res.sendFile(publicPath);
+      return;
+    }
   }
 
-  // Nếu không có, thử trong uploads
-  filePath = path.join(__dirname, "..", "uploads", "images", "song", filename);
-  res.sendFile(filePath, (err) => {
-    if (err) {
-      console.error("Error sending song image file:", err);
-      res.status(404).send("File not found");
+  // 2) Nếu không có, thử trong uploads/images/song
+  for (const name of candidates) {
+    const uploadPath = path.join(
+      __dirname,
+      "..",
+      "uploads",
+      "images",
+      "song",
+      name
+    );
+    if (fs.existsSync(uploadPath)) {
+      res.sendFile(uploadPath);
+      return;
     }
-  });
+  }
+
+  res.status(404).send("File not found");
 });
 
 // Phục vụ file ảnh ALBUM

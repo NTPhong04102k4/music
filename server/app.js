@@ -19,12 +19,23 @@ const billingRoutes = require("./routes/billing");
 
 const app = express();
 
-app.use(
-  cors({
-    origin: FRONTEND_URL,
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin: (origin, cb) => {
+    // Allow non-browser requests (no Origin) and relax CORS in development.
+    if (!origin) return cb(null, true);
+    if (NODE_ENV !== "production") return cb(null, true);
+
+    // Production: only allow configured frontend origin
+    return cb(null, origin === FRONTEND_URL);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+// CORS must run before auth middleware; handle preflight early.
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(express.json());
 
 // =======================================================
@@ -66,5 +77,3 @@ app.use("/api", userRoutes);
 app.use("/api", billingRoutes);
 
 module.exports = app;
-
-
