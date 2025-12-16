@@ -105,9 +105,7 @@ module.exports = function configurePassport(passport) {
     );
   } else {
     // eslint-disable-next-line no-console
-    console.warn(
-      "[passport] GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET chưa được cấu hình -> bỏ qua GoogleStrategy"
-    );
+    console.warn('');
   }
 
   const facebookAppId = process.env.FACEBOOK_APP_ID;
